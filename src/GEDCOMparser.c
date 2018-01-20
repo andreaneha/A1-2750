@@ -1,17 +1,6 @@
 #include "GEDCOMparser.h"
 
 
-
-bool isHead(char* string){
-
-    if(strcmp(string, "0 HEAD")==0){
-        return 1;
-    }
-    return 0;
-}
-
-
-
 GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     //printf(">>>>>>%s\n", fileName);
     GEDCOMerror g;
@@ -66,6 +55,42 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
 
     while(fgets(line,1000,file)!= NULL){
         // First Parse Header
+        if(strcmp(line, "0 HEAD\n") == 0){
+            if(headerExists == 0){
+                // there has not been a header in the file yet. 
+                // this is valid
+
+                headerExists = 1;
+                lineCounter++;
+                continue;
+
+            }
+            else{
+                // there is a preexisting header
+                // make sure to free all memory
+                g.type = 2;
+                g.line = lineCounter;
+                return g;
+            }
+        }
+        
+        if(headerExists){
+            printf("%s", line);
+
+
+        }
+        
+
+
+
+
+ 
+ 
+ 
+ 
+ 
+ /*
+ 
         if (lineCounter == 0){
             if(strcmp(line, "0 HEAD\n") != 0){ //****flexible line terminators! keep in mind***
                    g.type = 2;
@@ -75,11 +100,14 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
             else{
                 headerExists=1;
                 printf("header Exists");
-            }
+                if
+           }
+       }
+*/
 
 
-        }
-        
+
+
 
 
 
