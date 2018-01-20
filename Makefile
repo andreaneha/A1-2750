@@ -10,13 +10,10 @@ ifeq ($(UNAME), Darwin)
 	CCFLAGS += -std=c11
 endif
 
-listTests:  
-	$(CC)  $(CFLAGS) 
+debug: src/linkedlist.c src/GEDCOMparser.c src/test.c
+	$(CC) $(CFLAGS)  src/linkedlist.c src/GEDCOMparser.c src/test.c -o bin/testMe -g
+	gdb --args ./bin/testMe testdata.ged
 
-debug: 
-	$(CC) $(CFLAGS) 
-
-
-
-test: studentCode/linkedlist.c
-	$(CC) $(CFLAGS)
+test: src/linkedlist.c src/GEDCOMparser.c src/test.c
+	$(CC) $(CFLAGS) src/linkedlist.c src/GEDCOMparser.c src/test.c -o bin/testMe
+	./bin/testMe testdata.ged

@@ -1,0 +1,47 @@
+0 HEAD
+1 SOUR FTW
+2 VERS Family Tree Maker 2005 (12.0.345 SP1) August 20, 2004
+2 NAME Family Tree Maker 2005 for Windows
+2 CORP MyFamily.com, Inc.
+3 ADDR 360 W 4800 N
+4 CONT Provo, UT 84604
+3 PHON (801) 705-7000
+1 DEST FTW
+1 DATE 10 JUN 2007
+1 CHAR ANSI
+1 SUBM @SUBM@
+1 FILE C:\Documents and Settings\Home PC\My Documents\FTM\sample1.GED
+1 GEDC
+2 VERS 5.5
+2 FORM LINEAGE-LINKED
+0 @SUBM@ SUBM
+1 NAME Glen philip Jones
+1 ADDR uk
+0 @I185@ INDI
+1 NAME John Cheetham /Goulson/
+1 SEX M,
+1 BIRT
+2 DATE 1862
+2 PLAC Lincoln, Lincolnshire
+1 FAMS @F1@
+1 NOTE @NI185@
+0 @I253@ INDI
+1 NAME Louisa /Harrison/
+1 SEX F
+1 BIRT
+2 DATE 1856
+2 PLAC Lincoln, Lincolnshire
+1 FAMS @F1@
+0 @I254@ INDI
+1 NAME Edith Mary L /Goulson/
+1 SEX F
+1 BIRT
+2 DATE 1895
+2 PLAC Lincoln, Lincolnshire
+1 FAMC @F1@
+1 NOTE @NI254@
+0 TRLR
+
+
+
+
