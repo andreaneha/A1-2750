@@ -53,7 +53,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     }
 
     int lineCounter=0;
-    recordType currentType=0;
+    RecordType currentType=0;
     int currentLevel=0;
 
     while(fgets(line,1000,file)!= NULL){
@@ -95,11 +95,9 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
         }
 
         if(headerExists){
+            int levelCheck;
             //keep track of the current level
                 levelCheck = findCurrentLevel(line);
-
-                    //printf("%d\n", levelCheck);
-
 
                     if(levelCheck == currentLevel+1){
                         currentLevel ++;
@@ -109,29 +107,39 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                     } 
                     else if(levelCheck == 0){
                         //figure out way to check the type of record
+                        RecordType rt = findRecordType(line);
+                        printf(">>%d\n", rt);
+                        if(rt == INVALID){
+                            g.type = INV_RECORD;
+                            g.line = lineCounter;
+                            return g;
+                        }
 
                         currentType = 1;
                         currentLevel = levelCheck;
 
                     }
+                    else if(currentLevel == levelCheck){
+                    }
                     else{
                         g.type = 2;
                         g.line = lineCounter;
-
+                        return g;
                     }
 
 
                     if(currentType == 0){
-                        printf("%c\n", line[i]);
+                        
+                        // printf("%s\n", line);
                     }
                 }
-                else{
-                    break;
-                }
-                
-            }
-
+        else{
+            break;
         }
+                
+            
+
+        
 
 
         
