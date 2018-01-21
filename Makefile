@@ -12,7 +12,7 @@ endif
 
 debug: src/linkedlist.c src/GEDCOMparser.c src/test.c
 	$(CC) $(CFLAGS)  src/linkedlist.c src/GEDCOMparser.c src/test.c -o bin/testMe -g
-	gdb --args ./bin/testMe testdata.ged
+	#gdb --args ./bin/testMe testdata.ged core
 
 test: src/linkedlist.c src/GEDCOMparser.c src/test.c
 	$(CC) $(CFLAGS) src/linkedlist.c src/GEDCOMparser.c src/test.c -o bin/testMe

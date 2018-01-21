@@ -1,8 +1,9 @@
-#include "GEDCOMparser.h"
+#include <ctype.h>
 
+#include "GEDCOMutilities.h"
 
 GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
-    //printf(">>>>>>%s\n", fileName);
+   // printf(">>>>>>%s\n", fileName);
     GEDCOMerror g;
     FILE* file;
     char line[200];
@@ -52,14 +53,16 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     }
 
     int lineCounter=0;
+    recordType currentType=0;
+    int currentLevel=0;
 
     while(fgets(line,1000,file)!= NULL){
         // First Parse Header
         if(strcmp(line, "0 HEAD\n") == 0){
-            if(headerExists == 0){
+            if(!headerExists){
                 // there has not been a header in the file yet. 
                 // this is valid
-
+                currentType = 0;
                 headerExists = 1;
                 lineCounter++;
                 continue;
@@ -72,13 +75,104 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                 g.line = lineCounter;
                 return g;
             }
+
         }
         
-        if(headerExists){
-            printf("%s", line);
+        if(strcmp(line, "0 TRLR\n") == 0){
+            subExists = 1;// ******* disable when this gets implemented
+            if(headerExists && subExists && !trExists){
+                //both header and sub exists
+                trExists = 1;
+                g.line = -1;
+                g.type = 0;
+                return g;
+            }
+            else{
+                g.line = lineCounter;
+                g.type = 1;
+                return g;
+            }
+        }
 
+        if(headerExists){
+            //keep track of the current level
+            for(int i = 0; i< strlen(line); i++){
+
+                if(line[i] != ' ' && line[i] != '\t'){
+
+                    int levelCheck;
+                    char level[4];
+                    int j = i;
+
+                        //printf(">>>>>>%d", j);
+                    while(line[j] != '\0'){
+
+                        if(j >=  i+3){
+                            // free everything
+                            g.type = 2;
+                            g.line = lineCounter;
+                            printf("level number can not exceed 999\n");
+                            return g;
+
+                        }
+
+                        if(line[j] == ' '){
+                            level[j-i] = '\0';
+                            
+                            break;
+
+                        }
+                        else if(isdigit(line[j])){
+                            level[j-i] = line[j];
+                        }
+                        else{
+                            printf("level is not an integer\n");
+                            g.type = 2;
+                            g.type = lineCounter;
+                            return g;
+                        }
+                        j++;
+
+                    }
+                    
+                    levelCheck = atoi(level);
+
+                    //printf("%d\n", levelCheck);
+
+
+                    if(levelCheck == currentLevel+1){
+                        currentLevel ++;
+                    }
+                    else if(levelCheck < currentLevel && levelCheck != 0){
+                        currentLevel = levelCheck;
+                    } 
+                    else if(levelCheck == 0){
+                        //figure out way to check the type of record
+
+                        currentType = 1;
+                        currentLevel = levelCheck;
+
+                    }
+                    else{
+                        g.type = 2;
+                        g.line = lineCounter;
+
+                    }
+
+
+                    if(currentType == 0){
+                        printf("%c\n", line[i]);
+                    }
+                }
+                else{
+                    break;
+                }
+                
+            }
 
         }
+
+
         
 
 
@@ -92,7 +186,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
  /*
  
         if (lineCounter == 0){
-            if(strcmp(line, "0 HEAD\n") != 0){ //****flexible line terminators! keep in mind***
+            if(strcmp(line, "0 HEAD\n") != 0){ // ****flexible line terminators! keep in mind***
                    g.type = 2;
                    g.line = -1;
                    return g;

@@ -1,5 +1,7 @@
 #include "LinkedListAPI.h"
 #include "GEDCOMparser.h"
+#include "GEDCOMutilities.h"
+
 
 int main(int argc, char **argv){
 
@@ -15,7 +17,7 @@ int main(int argc, char **argv){
     anObject = &object;
     gObjectArray = &anObject;
     int error;
-    int desiredTestSuit = 1;
+    int desiredTestSuit = 2;
 
 /*
 
@@ -27,6 +29,15 @@ Testing create GEDCOM function. Testcases:
 - null GEDCOMobj
 
 */
+
+    if(desiredTestSuit == 2){
+        
+        gError = createGEDCOM(argv[1], gObjectArray);
+
+    }
+
+
+
 
     if(desiredTestSuit==1){
 
@@ -60,7 +71,6 @@ Testing create GEDCOM function. Testcases:
 //            printf(">>%d (should be 5)\n", error);
         }
 
-        gError = createGEDCOM(argv[1], gObjectArray);
         //if(gError.type == 2 && gError.line == -1){
           //  error ++; 
 //            printf(">>%d (should be 6)\n", error);
