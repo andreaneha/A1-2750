@@ -10,6 +10,8 @@ typedef enum rType {HEADER, EVENT, FIELD,
 //verify the header
 Header* createHeader(char* source, float gedcVersion, 
     CharSet encoding, Submitter* submitter, List otherFields);
+    
+int findCurrentLevel(char* line);
 
 
 #endif

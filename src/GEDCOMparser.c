@@ -96,46 +96,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
 
         if(headerExists){
             //keep track of the current level
-            for(int i = 0; i< strlen(line); i++){
-
-                if(line[i] != ' ' && line[i] != '\t'){
-
-                    int levelCheck;
-                    char level[4];
-                    int j = i;
-
-                        //printf(">>>>>>%d", j);
-                    while(line[j] != '\0'){
-
-                        if(j >=  i+3){
-                            // free everything
-                            g.type = 2;
-                            g.line = lineCounter;
-                            printf("level number can not exceed 999\n");
-                            return g;
-
-                        }
-
-                        if(line[j] == ' '){
-                            level[j-i] = '\0';
-                            
-                            break;
-
-                        }
-                        else if(isdigit(line[j])){
-                            level[j-i] = line[j];
-                        }
-                        else{
-                            printf("level is not an integer\n");
-                            g.type = 2;
-                            g.type = lineCounter;
-                            return g;
-                        }
-                        j++;
-
-                    }
-                    
-                    levelCheck = atoi(level);
+                levelCheck = findCurrentLevel(line);
 
                     //printf("%d\n", levelCheck);
 
