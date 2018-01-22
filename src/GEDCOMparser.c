@@ -10,7 +10,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     bool headerExists = 0;
     bool subExists = 0;
     bool trExists=0;
-
+    List headerList;
 
     //check arguements
     if(fileName == NULL){
@@ -62,9 +62,11 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
             if(!headerExists){
                 // there has not been a header in the file yet. 
                 // this is valid
+                headerList = initializeList(printField, deleteField, compareFields);
                 currentType = 0;
                 headerExists = 1;
                 lineCounter++;
+
                 continue;
 
             }
@@ -129,49 +131,23 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
 
 
                     if(currentType == 0){
+                        //this is under the header
                         
-                        // printf("%s\n", line);
+                        Field * field;
+                        field = createHeaderField(line, currentLevel);
+                        if(field != NULL){
+                        
+                            printf("%s\n", field->value);
+	                   // insertFront(&headerList,field);
+                        }
+                        else{
+                            printf("******\n");
+                        }
+
+
+
                     }
                 }
-        else{
-            break;
-        }
-                
-            
-
-        
-
-
-        
-
-
-
-
- 
- 
- 
- 
- 
- /*
- 
-        if (lineCounter == 0){
-            if(strcmp(line, "0 HEAD\n") != 0){ // ****flexible line terminators! keep in mind***
-                   g.type = 2;
-                   g.line = -1;
-                   return g;
-            }
-            else{
-                headerExists=1;
-                printf("header Exists");
-                if
-           }
-       }
-*/
-
-
-
-
-
 
 
         lineCounter++;
@@ -187,3 +163,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     g.line = 1; 
     return g;
 }
+
+void deleteField(void* toBeDeleted){}
+int compareFields(const void* first,const void* second){return 0;}
+char* printField(void* toBePrinted){return NULL;}

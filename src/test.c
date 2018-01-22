@@ -2,6 +2,15 @@
 #include "GEDCOMparser.h"
 #include "GEDCOMutilities.h"
 
+/*
+list of testsuits
+1 - GEDCOMparse errors
+2 - GEDCOMparse happy path
+3 - create header
+
+
+*/
+
 
 int main(int argc, char **argv){
 
@@ -18,6 +27,17 @@ int main(int argc, char **argv){
     gObjectArray = &anObject;
     int error;
     int desiredTestSuit = 2;
+    Field * field;
+
+    if(desiredTestSuit == 3){
+        field = createHeaderField("1 SOUR FTW\n", 1);
+        printf("%s:%s\n", field->tag, field->value);
+        
+    }
+
+
+
+
 
 /*
 
