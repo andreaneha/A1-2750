@@ -26,12 +26,25 @@ int main(int argc, char **argv){
     anObject = &object;
     gObjectArray = &anObject;
     int error;
-    int desiredTestSuit = 2;
+    int desiredTestSuit = 3;
     Field * field;
 
     if(desiredTestSuit == 3){
         field = createHeaderField("1 SOUR FTW\n", 1);
         printf("%s:%s\n", field->tag, field->value);
+
+        printf("Check how the parse file function handels things\n");
+        gError = createGEDCOM(argv[1], gObjectArray);
+
+        printf("\nCheck the createSubmitterField function\n");
+        Field * field;
+        field = createSubmitterField("   1   NAME penis", 1);
+        printf("%s:%s\n", field->tag, field->value);
+
+
+
+
+
         
     }
 

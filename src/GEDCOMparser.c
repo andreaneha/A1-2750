@@ -11,6 +11,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     bool subExists = 0;
     bool trExists=0;
     List headerList;
+    List subList;
 
     //check arguements
     if(fileName == NULL){
@@ -63,6 +64,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                 // there has not been a header in the file yet. 
                 // this is valid
                 headerList = initializeList(printField, deleteField, compareFields);
+                subList = initializeList(printField, deleteField, compareFields);
                 currentType = 0;
                 headerExists = 1;
                 lineCounter++;
@@ -110,15 +112,16 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                     else if(levelCheck == 0){
                         //figure out way to check the type of record
                         RecordType rt = findRecordType(line);
-                        printf(">>%d\n", rt);
+                        //printf(">>%d\n", rt);
                         if(rt == INVALID){
                             g.type = INV_RECORD;
                             g.line = lineCounter;
                             return g;
                         }
 
-                        currentType = 1;
+                        currentType = rt;
                         currentLevel = levelCheck;
+                        continue;
 
                     }
                     else if(currentLevel == levelCheck){
@@ -132,21 +135,36 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
 
                     if(currentType == 0){
                         //this is under the header
+                        //printf("This is part of the header\n");
                         
                         Field * field;
                         field = createHeaderField(line, currentLevel);
                         if(field != NULL){
-                        
-                            printf("%s\n", field->value);
-	                   // insertFront(&headerList,field);
+	                        insertFront(&headerList,field);
                         }
                         else{
                             printf("******\n");
                         }
-
-
-
                     }
+                    else if(currentType == 1){
+                        //this is part of the submitter
+                        subExists = 1;
+                        Field * field;
+                        field = createSubmitterField(line, currentLevel);
+                        if(field != NULL){
+                            insertFront(&subList, field);
+                            Node * node;
+                            node = subList.head;
+
+                        }
+                        else{
+                            printf("************\n");
+                        }
+                    }
+
+
+
+
                 }
 
 
