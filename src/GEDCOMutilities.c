@@ -1,6 +1,6 @@
 #include "GEDCOMutilities.h"
 
-Field* createIndField(char* line, int level){
+Field* createSubmitterField(char* line, int level){
     char * lv1tags[] = {"NAME", "ADDR", "OBJE", "LANG", "RFN", "RIN", 
                             "NOTE", "CHAN", "PHON", "EMAIL", "FAX",
                              "WWW"};//12
@@ -46,8 +46,8 @@ Field* createIndField(char* line, int level){
                 }
             }
         }
-
     }
+ 
     for(int i = 0; i<len; i++){
         char c = val[i];
         if((c>='a' && c<='z') || (c>='A' && c<='Z')){
@@ -63,94 +63,8 @@ Field* createIndField(char* line, int level){
             }
         }
         if(tagIndex == lengthOfTag+1 && c !=' ' ){
-
              data = &val[i];
              tagIndex++;
-        
-        }
-        else if(c == '\n'){
-            val[i] = '\0';
-        }
-
-    }
-    bool tagFound = 0;
-    if(level == 1){
-        for(int i=0; i<12; i++){
-            if(strcmp(lv1tags[i],tag)==0){
-                tagFound = 1;
-            }
-        }
-    }
-    else if(level == 2){
-        for(int i=0; i<9; i++){
-            if(strcmp(lv2tags[i],tag)==0){
-                //store in linked list                                Field* createSubmitterField(char* line, int level){
-                tagFound = 1;                                             char * lv1tags[] = {"NAME", "ADDR", "OBJE", "LANG", "RFN", "RIN", 
-            }                                                                                     "NOTE", "CHAN", "PHON", "EMAIL", "FAX",
-        }                                                                                          "WWW"};//12
-    }                                                                     char * lv2tags[] = {"CONT", "ADR1", "ADR2", "ADR3", "CITY", 
-    else if(level == 3){                                                                          "STAE", "POST", "CTRY", "FILE", 
-        for(int i=0; i<4; i++){                                                                   "TITL", "CONC", "DATE","NOTE"};//13
-            if(strcmp(lv3tags[i],tag)==0){                                char * lv3tags[] = {"FORM", "CONT", "CONC", "TIME"};//4
-                //store in linked list
-                tagFound = 1;                                             int len = strlen(line);
-            }                                                             char tag[5];
-        }                                                                 char val[len];
-    }                                                                     char *data;
-                                                                          int tagIndex = 0;
-                                                                          int spaceIndex= 0;
-    Field *newField = malloc(sizeof(Field));                              strcpy(val, line);
-    if(tagFound){                                                         bool whiteSpace = 0;
-    ///// make sure everything is valid                                   int lengthOfTag=0;
-        //printf("%d\n", (int) strlen(data));                             if(val[0] != '\t' && val[0] != ' '){
-        char * newTag = malloc(sizeof(char)*strlen(tag));                     spaceIndex++;
-        char * newValue = malloc(sizeof(char)*strlen(data));              }
-        strcpy(newTag, tag);
-        strcpy(newValue, data);                                           for(int i=0; i<len;i++){
-        newField->tag = newTag;                                               if(val[i] == '\t' || val[i] == ' '){
-        newField->value = newValue;                                               if(whiteSpace){
-    }                                                                                 continue;
-    else{                                                                         }
-        return NULL;                                                              else{
-                                                                                      spaceIndex++;
-    }                                                                                 whiteSpace = 1;
-    return newField;                                                              }
-}                                                                             }
-        else{
-            if(whiteSpace){
-                if(spaceIndex == 2){
-                    lengthOfTag++;
-                }
-                whiteSpace = 0;
-            }
-            else{
-                if(spaceIndex ==2){
-                    lengthOfTag++;
-                    continue;
-                }
-            }
-        }
-
-    }
-    for(int i = 0; i<len; i++){
-        char c = val[i];
-        if((c>='a' && c<='z') || (c>='A' && c<='Z')){
-            if(tagIndex<lengthOfTag){
-                tag[tagIndex] = c;
-                tagIndex++;
-                if(tagIndex == lengthOfTag){
-                    tag[tagIndex] = '\0';
-                    tagIndex++;
-                    continue;
-                }
-                continue;
-            }
-        }
-        if(tagIndex == lengthOfTag+1 && c !=' ' ){
-
-             data = &val[i];
-             tagIndex++;
-        
         }
         else if(c == '\n'){
             val[i] = '\0';
@@ -196,7 +110,6 @@ Field* createIndField(char* line, int level){
     }
     else{
         return NULL;
-
     }
     return newField;
 }
@@ -289,7 +202,6 @@ Field* createHeaderField(char* line, int level){
     }
     else{
         return NULL;
-
     }
 
     return newField;
