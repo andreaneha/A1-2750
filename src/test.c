@@ -30,22 +30,23 @@ int main(int argc, char **argv){
     Field * field;
 
     if(desiredTestSuit == 3){
-    /*    field = createHeaderField("1 SOUR FTW\n", 1);
-        printf("%s:%s\n", field->tag, field->value);
+        //field = createHeaderField("1 SOUR FTW\n", 1);
+        //printf(">>%s:%s\n", field->tag, field->value);
 
-        printf("Check how the parse file function handels things\n");
-        gError = createGEDCOM(argv[1], gObjectArray);
+       // printf("Check how the parse file function handels things\n");
+       gError = createGEDCOM(argv[1], gObjectArray);
 
-        printf("\nCheck the createSubmitterField function\n");
+  /*      printf("\nCheck the createSubmitterField function\n");
         Field * field;
         field = createSubmitterField("   1   NAME\n", 1);
         printf("%s:%s\n", field->tag, field->value);
-*/
-        printf("\nCreate individual field\n");
-        Field * field1;
-        field1 = createIndiField("2 ADDR\n", 2);
 
-        printf("%s:%s\n", field1->tag, field1->value);
+        printf("\nCreate individual field\n");
+*/
+  //      Field * field1;
+  //      field1 = createIndiField("2 ADDR\n", 2);
+
+    //    printf("%s:%s\n", field1->tag, field1->value);
 
 
 

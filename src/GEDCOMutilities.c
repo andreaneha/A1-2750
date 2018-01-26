@@ -1,5 +1,41 @@
 #include "GEDCOMutilities.h"
 
+Header * createHeader(List* headerFieldList){
+
+	ListIterator iter = createIterator(*headerFieldList);
+    Field * field;    
+    field = (Field *)nextElement(&iter);
+    
+    Header * header;
+    header = malloc(sizeof(Header));
+
+    while(field != NULL){
+        //printf("%s\n", field->tag);
+        if(strcmp(field->tag, "SOUR")==0){
+            strcpy(header->source, field->value);
+
+        }
+        else if(strcmp(field->tag, "GEDC")==0){
+            
+            field = (Field *)nextElement(&iter);
+            header->gedcVersion = atof(field->value);
+            printf(">>%f\n", header->gedcVersion);
+        }
+        
+        
+        field = (Field *)nextElement(&iter);
+    }
+
+    field = (Field*) headerFieldList->head->data;
+
+
+    return NULL;
+}
+
+
+
+
+
 
 Field* createIndiField(char* line, int level){
     char * tags[] = {"ADDR", "ADOP", "ADR1", "ADR2", "ADR3", "AFN", "AGE", "AGNCY", "ALLA",    
@@ -13,7 +49,7 @@ Field* createIndiField(char* line, int level){
             "POST", "PROB", "PROP", "QUAY", "REFN", "RELA", "RELI", "RESN", "RETI", 
             "RFN",  "RIN",  "ROLE", "ROMN", "SLGC", "SOUR", "SPFX", "SSN",  "STAE", 
             "STAT", "SUBM", "SURN", "TEMP", "TEXT", "TIME", "TITL", "TYPE", "WILL", 
-            "WWW"}; //100 tags
+            "WWW", "SEX"}; //101 tags
 
     int len = strlen(line);
     char tag[5];
@@ -58,7 +94,10 @@ Field* createIndiField(char* line, int level){
    
    for(int i = 0; i<len; i++){
        char c = val[i];
-       if((c>='a' && c<='z') || (c>='A' && c<='Z')){
+        if(c != ' '&& c!= '\t' && c!= '\n'){
+           if(isdigit(c) && tagIndex == 0){
+               continue;
+           }
            if(tagIndex<lengthOfTag){
                tag[tagIndex] = c;
                tagIndex++;
@@ -82,7 +121,7 @@ Field* createIndiField(char* line, int level){
     }
     tag[tagIndex] = '\0';
     bool tagFound = 0;
-    for(int i=0; i<100; i++){
+    for(int i=0; i<101; i++){
         if(strcmp(tag,tags[i])==0){
             tagFound = 1;
         }
@@ -165,7 +204,10 @@ Field* createSubmitterField(char* line, int level){
  
     for(int i = 0; i<len; i++){
         char c = val[i];
-        if((c>='a' && c<='z') || (c>='A' && c<='Z')){
+        if(c != ' '&& c!= '\t' && c!= '\n'){
+            if(isdigit(c) && tagIndex == 0){
+                continue;
+            }
             if(tagIndex<lengthOfTag){
                 tag[tagIndex] = c;
                 tagIndex++;
@@ -245,7 +287,10 @@ Field* createHeaderField(char* line, int level){
     strcpy(val, line);
     for(int i = 0; i<len; i++){
         char c = val[i];
-        if((c>='a' && c<='z') || (c>='A' && c<='Z')){
+        if(c != ' '&& c!= '\t' && c!= '\n'){
+            if(isdigit(c) && tagIndex == 0){
+                continue;
+            }
             if(tagIndex<4){
                 tag[tagIndex] = c;
                 tagIndex++;
