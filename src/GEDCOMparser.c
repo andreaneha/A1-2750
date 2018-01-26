@@ -12,6 +12,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     bool trExists=0;
     List headerList;
     List subList;
+    List indiList;
 
     //check arguements
     if(fileName == NULL){
@@ -131,8 +132,6 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                         g.line = lineCounter;
                         return g;
                     }
-
-
                     if(currentType == 0){
                         //this is under the header
                         //printf("This is part of the header\n");
@@ -161,21 +160,33 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                             printf("************\n");
                         }
                     }
+                    else if(currentType == 2){
+                        //this is part of individual
+                        Field * field;
+                        field = createIndiField(line, currentLevel);
+                        if(field != NULL){
+                            insertFront(&indiList, field);
+                            Node * node;
+                            node = indiList.head;
+                            Field * newField;
+                            newField = (Field *) node->data;
+                            if(newField->value == NULL){
+                                strcpy(newField->value, " ");
+                            }
+                            printf("%s:%s\n", newField->tag, newField->value);
+                                                                          
+                        }
+                        else{
+                            printf("************\n");
+                        }
 
-
-
+                    }
 
                 }
-
 
         lineCounter++;
 
     }
-
-
-
-
-
 
     g.type = 0;
     g.line = 1; 

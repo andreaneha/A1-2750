@@ -14,6 +14,7 @@ Field* createSubmitterField(char* line, int level);
 
 //verify the header
 Field* createHeaderField(char* line, int level);
+Field* createIndiField(char* line, int level);
     
 
     
