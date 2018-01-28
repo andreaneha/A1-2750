@@ -14,6 +14,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     List subList;
     List indiList;
 
+
     //check arguements
     if(fileName == NULL){
         g.type = 1;
@@ -57,6 +58,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     int lineCounter=0;
     RecordType currentType=0;
     int currentLevel=0;
+    int recordNum = -1;
 
     while(fgets(line,1000,file)!= NULL){
     //    printf("%s\n", line);
@@ -70,6 +72,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                 indiList = initializeList(printField, deleteField, compareFields);
                 currentType = 0;
                 headerExists = 1;
+                recordNum ++;
                 lineCounter++;
 
                 continue;
@@ -90,8 +93,11 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
             if(headerExists && subExists && !trExists){
                 Header* newHeader;
                 newHeader = createHeader(&headerList);
+                GEDCOMobject * object;
+                object->header = newHeader;
                 //printf(">>>>> hello\n");
                 //both header and sub exists
+                obj[recordNum] = object;
                 trExists = 1;
                 g.line = -1;
                 g.type = 0;
@@ -206,6 +212,50 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     return g;
 }
 
-void deleteField(void* toBeDeleted){}
-int compareFields(const void* first,const void* second){return 0;}
+void deleteField(void* toBeDeleted){
+    Field* field;
+    field = (Field *)toBeDeleted;
+    
+    if(field==NULL){
+        //do Something
+    }
+    else{
+        free(field->tag);
+        free(field->value);
+        free(field);
+    }
+            
+}
+
+int compareFields(const void* first,const void* second){
+    // 0 false
+    // 1 true
+    Field* field1;
+    Field* field2;
+    field1 = (Field*)first;
+    field2 = (Field*)second;
+    int tagComp = strcmp(field1->tag,field2->tag);
+    int valComp = strcmp(field1->value, field2->value);
+    if(!tagComp && !valComp){
+        return 1;
+    }
+    else{
+        return 0;
+    }
+}
+
 char* printField(void* toBePrinted){return NULL;}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -16,12 +16,11 @@ Field* createSubmitterField(char* line, int level);
 Field* createHeaderField(char* line, int level);
 Field* createIndiField(char* line, int level);
 Header * createHeader(List* headerFieldList);    
-
+int findCharSet(char* value);
     
 int findCurrentLevel(char* line);
 
 RecordType findRecordType(char* line);
-
 
 
 #endif

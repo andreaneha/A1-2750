@@ -1,35 +1,80 @@
 #include "GEDCOMutilities.h"
 
+int findCharSet(char* value){
+    int charVal;
+    
+    if(strcmp(value,"ANSEL")==0){
+        charVal = 0;
+    }else if(strcmp(value,"UTF8")==0){
+        charVal = 1;
+    }else if(strcmp(value,"UNICODE")==0){
+        charVal = 2;
+    }else if(strcmp(value,"ASCII")==0){
+        charVal = 3;
+    }else{
+        charVal = 4;
+    }
+
+return charVal;
+}
+
+
+
 Header * createHeader(List* headerFieldList){
 
 	ListIterator iter = createIterator(*headerFieldList);
     Field * field;    
-    field = (Field *)nextElement(&iter);
+
+    field = (Field*)nextElement(&iter);
     
     Header * header;
     header = malloc(sizeof(Header));
 
+    bool delField ;
+
     while(field != NULL){
-        //printf("%s\n", field->tag);
+        delField = 0;
         if(strcmp(field->tag, "SOUR")==0){
             strcpy(header->source, field->value);
-
+            delField = 1;
         }
         else if(strcmp(field->tag, "GEDC")==0){
-            
             field = (Field *)nextElement(&iter);
             header->gedcVersion = atof(field->value);
-            printf(">>%f\n", header->gedcVersion);
+            delField = 1;
         }
-        
-        
+        else if(strcmp(field->tag, "CHAR")==0){
+            header->encoding = (CharSet)findCharSet(field->value);
+            delField = 1;
+        }
+        else if(strcmp(field->tag, "SUBM")==0){
+            //submitter pointer goes here
+            header->submitter = NULL;
+            delField = 1;
+        }
+
+        if(delField){
+            Field *fieldTemp = field;
+            field = nextElement(&iter);
+            deleteDataFromList(headerFieldList, fieldTemp);
+            continue;
+
+        }
         field = (Field *)nextElement(&iter);
+
+    }
+    iter.current = headerFieldList->head;
+    field = (Field*)nextElement(&iter);
+
+    while(field!=NULL){
+        printf("%s\n", field->tag);
+        field = (Field*) nextElement(&iter);
     }
 
-    field = (Field*) headerFieldList->head->data;
+    header->otherFields = *headerFieldList;
 
 
-    return NULL;
+    return header;
 }
 
 
