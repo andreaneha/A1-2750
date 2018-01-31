@@ -12,7 +12,10 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     bool trExists=0;
     List headerList;
     List subList;
-    List indiList;
+    List *indiList[200];
+    List refList;
+    List refUsedList;
+    int indilen = -1;
 
 
     //check arguements
@@ -61,7 +64,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     int recordNum = -1;
 
     while(fgets(line,1000,file)!= NULL){
-    //    printf("%s\n", line);
+    //    printf("%s\n", linlocationOfRefde);
         // First Parse Header
         if(strcmp(line, "0 HEAD\n") == 0){
             if(!headerExists){
@@ -69,7 +72,8 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                 // this is valid
                 headerList = initializeList(printField, deleteField, compareFields);
                 subList = initializeList(printField, deleteField, compareFields);
-                indiList = initializeList(printField, deleteField, compareFields);
+                refList = initializeList(NULL, NULL, NULL);
+                refUsedList = initializeList(NULL, NULL, NULL); 
                 currentType = 0;
                 headerExists = 1;
                 recordNum ++;
@@ -92,11 +96,13 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
             subExists = 1;// ******* disable when this gets implemented
             if(headerExists && subExists && !trExists){
                 Header* newHeader;
-                newHeader = createHeader(&headerList);
+                newHeader = createHeader(&headerList, &subList);
                 GEDCOMobject * object;
+                object = malloc(sizeof(GEDCOMobject));
                 object->header = newHeader;
-                //printf(">>>>> hello\n");
+                //printf(">>>>> hello %s\n", object.header);
                 //both header and sub exists
+
                 obj[recordNum] = object;
                 trExists = 1;
                 g.line = -1;
@@ -130,9 +136,33 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                             g.line = lineCounter;
                             return g;
                         }
+                        else if(rt == 2){
+                            indilen++;
+                            List *newList = malloc(sizeof(List));
+                            *newList = initializeList(printField, 
+                                deleteField, compareFields);
 
+	                        //indiList[indilen] = malloc(sizeof(List*));
+                            indiList[indilen] = newList;
+
+
+                        }
                         currentType = rt;
                         currentLevel = levelCheck;
+                        Ref * ref;
+                        ref = createRed(line);
+                        if (ref == NULL){
+                            printf("error\n");
+                            //*************ERROR!
+                        }
+                        else{
+                            printf("**%s\n",ref->id);
+	                        if(rt == 1){ref->locationOfRecord = &subList;} 
+                            else if(rt == 2){ref->locationOfRecord = indiList[indilen];}
+                        }
+	                    insertBack(&refList, ref);
+
+
                         continue;
 
                     }
@@ -177,8 +207,8 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                         field = createIndiField(line, currentLevel);
                         if(field != NULL){
                             //printf("%s\n", field->tag);
-                            insertBack(&indiList, field);
-                            Node * node;
+                            insertBack(indiList[indilen], field);
+                            /*Node * node;
                             node = indiList.head;
                             Field * newField;
                             newField = (Field *) node->data;
@@ -186,7 +216,8 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                                 strcpy(newField->value, " ");
                             }
                             //printf("%s:%s\n", newField->tag, newField->value);
-                                                                          
+                            List * newList;
+                            */
                         }
                         else{
                             printf("************\n");
@@ -203,7 +234,6 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     
     
     
-
 
 
 
