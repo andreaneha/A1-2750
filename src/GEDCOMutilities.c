@@ -1,5 +1,102 @@
 #include "GEDCOMutilities.h"
 
+
+bool isEvent(Field * field){
+    char * tags[] = {"BIRT", "CHR" , "DEAT", "BURI", "CREM", "ADOP", "BAPM", "BARM" , "BASM", 
+              "BLES", "CHRA", "CONF", "FCOM", "ORDN", "NATU", "EMIG", "IMMI", "CENS", "PROB", 
+              "WILL", "GRAD", "RETI","EVEN"}; //51
+     
+    char *fieldTag = field->tag;
+    char *fieldVal = field->value;
+    bool eventFound = 0;
+
+    for(int i; i<23;i++){
+        if(strcmp(fieldTag, tags[i])==0){
+            eventFound = 1;
+            break;
+        }
+
+    }
+    return eventFound;
+}
+
+List * createIndiList(List** indiList, List** EventList){
+
+    int listLen = 0;
+    int listIndex = 0;
+    List * ret = NULL;
+
+    while(indiList[listIndex]!=NULL){
+        listLen++;
+        listIndex++;
+    }
+
+    //initialize list of individuals
+    List * listOfIndividuals=malloc(sizeof(List));
+    *listOfIndividuals = initializeList(NULL, NULL, compareFields);
+
+    for(int i=0; i<listLen; i++){
+        List * currentList;
+        currentList = indiList[i];
+        ListIterator iter = createIterator(*currentList);
+        Field * currentNode;
+	    currentNode = nextElement(&iter);
+        Individual * individual= malloc(sizeof(Individual));
+        bool delNode;
+        bool eventInitialized = 0;
+
+        while (currentNode != NULL){
+            delNode = 0;
+            if(strcmp(currentNode->tag, "NAME") == 0){
+                //parse first and last name
+                individual->givenName = currentNode->value;
+                delNode = 1;
+            }
+            else if(strcmp(currentNode->value, " ") == 0){
+                delNode = 1;
+            }
+            else if(strcmp(currentNode->tag,"event")==0){
+                char val[20];
+                int index;
+                strcpy(val, currentNode->value);
+                index = atoi(&val[6]);
+                if(!eventInitialized){
+                    eventInitialized =1;
+                    List* list = malloc(sizeof(List)); 
+                    *list = initializeList(printField, deleteField, compareFields);
+
+	                individual->events = *list;
+                }
+                Event * event = malloc(sizeof(event));
+                event->otherFields = *EventList[index];
+               //FILL IN EVENTS FIELDS 
+	            insertBack(&individual->events, event);
+                delNode =1;
+
+            }
+
+           //detect events and families
+
+           if(delNode){
+              Field *fieldTemp = currentNode;
+              currentNode = nextElement(&iter);
+              deleteDataFromList(currentList, fieldTemp);
+            }
+            else{
+                currentNode = nextElement(&iter);
+           }
+	       individual->otherFields = *currentList;
+           insertBack(listOfIndividuals, individual);
+
+        }
+
+
+        
+    }
+
+	return listOfIndividuals;
+}
+
 Ref *createRed(char * line){
   //  printf("%s\n", line);
     Ref * ref = NULL;
@@ -15,13 +112,11 @@ Ref *createRed(char * line){
             open = 1;
             if(line[i+1] != '\0');
                 at = &line[i+1];
-            printf("sup yo\n");
             continue;
         }
         else if(line[i] == '@' && open){
             close = 1;
             line[i] = '\0';
-            printf("ass ass ass\n");
             continue;
         }
         else if(line[i] != '@' && open && !close){
@@ -44,20 +139,6 @@ return ref;
 
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 int findCharSet(char* value){
     int charVal;
     
@@ -76,7 +157,7 @@ int findCharSet(char* value){
 return charVal;
 }
 
-Header * createHeader(List* headerFieldList, List * subList){
+Header * createHeader(List* headerFieldList){
 
 	ListIterator iter = createIterator(*headerFieldList);
     Field * field;    
@@ -123,7 +204,6 @@ Header * createHeader(List* headerFieldList, List * subList){
     field = (Field*)nextElement(&iter);
 
     while(field!=NULL){
-        printf("%s\n", field->tag);
         field = (Field*) nextElement(&iter);
     }
 

@@ -10,13 +10,16 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     bool headerExists = 0;
     bool subExists = 0;
     bool trExists=0;
+    bool isField=0;
     List headerList;
     List subList;
     List *indiList[200];
     List refList;
     List refUsedList;
     int indilen = -1;
-
+    int eventLen= -1;
+    int fieldLevel = 0;
+    List *EventList[200];
 
     //check arguements
     if(fileName == NULL){
@@ -96,13 +99,18 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
             subExists = 1;// ******* disable when this gets implemented
             if(headerExists && subExists && !trExists){
                 Header* newHeader;
-                newHeader = createHeader(&headerList, &subList);
+                newHeader = createHeader(&headerList);
+                indilen++;
+                eventLen++;
+                indiList[indilen] = NULL;
+                EventList[eventLen]=NULL;
                 GEDCOMobject * object;
                 object = malloc(sizeof(GEDCOMobject));
                 object->header = newHeader;
                 //printf(">>>>> hello %s\n", object.header);
                 //both header and sub exists
-
+                List * ind = createIndiList(indiList, EventList);
+                object->individuals = *ind;
                 obj[recordNum] = object;
                 trExists = 1;
                 g.line = -1;
@@ -156,7 +164,6 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                             //*************ERROR!
                         }
                         else{
-                            printf("**%s\n",ref->id);
 	                        if(rt == 1){ref->locationOfRecord = &subList;} 
                             else if(rt == 2){ref->locationOfRecord = indiList[indilen];}
                         }
@@ -193,8 +200,8 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                         field = createSubmitterField(line, currentLevel);
                         if(field != NULL){
                             insertBack(&subList, field);
-                            Node * node;
-                            node = subList.head;
+                            //Node * node;
+                            //node = subList.head;
 
                         }
                         else{
@@ -207,7 +214,37 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                         field = createIndiField(line, currentLevel);
                         if(field != NULL){
                             //printf("%s\n", field->tag);
-                            insertBack(indiList[indilen], field);
+                            if(isEvent(field) || isField){
+                                if(!isField){
+                                    fieldLevel = currentLevel;
+                                    eventLen++;
+                                    List *newList = malloc(sizeof(List));
+                                    *newList = initializeList(printField,
+                                        deleteField, compareFields);
+                                        //indiList[indilen] = malloc(sizeof(List*));
+                                    EventList[eventLen] = newList;
+                                    insertBack(EventList[eventLen], field);
+                                    isField =1;
+                                }
+                                else if(currentLevel == fieldLevel && isField){
+                                    Field * field = malloc(sizeof(field));
+                                    field->tag = malloc(sizeof(char)*6);
+                                    field->value = malloc(sizeof(char)*6);
+                                    strcpy(field->tag, "event");
+                                    char buffer[20];
+                                    sprintf(buffer, "index=%d", eventLen);
+                                    strcpy(field->value, buffer);
+                                    insertBack(indiList[indilen],field);
+                                    isField = 0;
+
+                                }else
+                                {
+                                    insertBack(EventList[eventLen], field);
+                                }
+                            }
+                            if(!isField){
+                                insertBack(indiList[indilen], field);
+                            }
                             /*Node * node;
                             node = indiList.head;
                             Field * newField;
@@ -267,10 +304,10 @@ int compareFields(const void* first,const void* second){
     int tagComp = strcmp(field1->tag,field2->tag);
     int valComp = strcmp(field1->value, field2->value);
     if(!tagComp && !valComp){
-        return 1;
+        return 0;
     }
     else{
-        return 0;
+        return 1;
     }
 }
 

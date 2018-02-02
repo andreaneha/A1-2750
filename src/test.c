@@ -41,7 +41,6 @@ int main(int argc, char **argv){
         field = createSubmitterField("   1   NAME\n", 1);
         printf("%s:%s\n", field->tag, field->value);
 
-        printf("\nCreate individual field\n");
 */
   //      Field * field1;
   //      field1 = createIndiField("2 ADDR\n", 2);
@@ -50,6 +49,7 @@ int main(int argc, char **argv){
 
 
 
+        printf("\nCreate individual field\n");
 
 
         
