@@ -28,7 +28,7 @@ typedef struct{
 
 
 
-
+Field * createFamilyField(char* line, int currentLevel);
 Field* createSubmitterField(char* line, int level);
 
 //verify the header

@@ -1,5 +1,24 @@
 #include "GEDCOMutilities.h"
 
+Field * createFamilyField(char* line, int currentLevel){
+    Field * field = NULL;
+    printf("%s :%d\n", line, currentLevel);
+    return field;
+
+
+}
+ 
+      
+
+
+
+
+
+
+
+
+
+
 
 bool isEvent(Field * field){
     char * tags[] = {"BIRT", "CHR" , "DEAT", "BURI", "CREM", "ADOP", "BAPM", "BARM" , "BASM", 
