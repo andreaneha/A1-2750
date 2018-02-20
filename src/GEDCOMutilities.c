@@ -1,13 +1,147 @@
 #include "GEDCOMutilities.h"
 
-Field * createFamilyField(char* line, int currentLevel){
-    Field * field = NULL;
-    printf("%s :%d\n", line, currentLevel);
-    return field;
+
+void * printEventFields(List * list){
+    int len = list->length;
+    printf("%d\n", len);
+
 
 
 }
+
+
+
+
+
+
+Field * createFamilyField(char* line, int currentLevel){
+    Field * field = NULL;
+    printf("%s :%d\n", line, currentLevel);
+
+    char * tags []= { 
+        "ADDR", "ADR1", "ADR2", "ADR3", "AGE", "AGNC", "ANUL", "CAUS", "CENS", "CHIL",
+        "CITY", "CONC", "CONT", "CTRY", "DATA", "DIV", "DIVF", "EMAIL", "ENGA", "EVEN",
+        "FAX", "FILE", "FONE", "FORM", "HUSB", "LATI", "LONG", "MAP", "MARB", "MARC",
+        "MARL", "MARR", "MARS", "NCHI", "NOTE", "OBJE", "PAGE", "PHON", "PLAC", "POST",
+        "QUAY", "REFN", "RELI", "RESI", "RESN", "ROLE", "ROMN", "SLGS", "SOUR", "STAE",
+        "STAT", "STRY", "SUBM", "TEMP", "TEXT", "TITLE", "TYPE", "WIFE", "WILD", "WWW", 
+        "DATE"
+     };
+    
+    int len = strlen(line);                                            
+    char tag[5];                                                   
+    char val[len];                                                 
+    char *data;                                                    
+    int tagIndex = 0;
+    int spaceIndex= 0;
+    strcpy(val, line);
+    bool whiteSpace = 0;
+    int lengthOfTag=0;
+    bool valExist=0;
+    if(val[0] != '\t' && val[0] != ' '){
+    spaceIndex++;
+    }
+                                          
+    for(int i=0; i<len;i++){
+    if(val[i] == '\t' || val[i] == ' '){
+        if(whiteSpace){
+            continue;
+        }
+        else{
+            spaceIndex++;
+            whiteSpace = 1;
+            }
+        }
+        else{
+             if(whiteSpace){
+                 if(spaceIndex == 2){
+                     lengthOfTag++;
+                 }
+                 whiteSpace = 0;
+             }
+             else{
+                 if(spaceIndex ==2){
+                     lengthOfTag++;
+                     continue;
+                 }
+             }
+         }
+    }
  
+    
+    for(int i = 0; i<len; i++){
+        char c = val[i];
+         if(c != ' '&& c!= '\t' && c!= '\n'){
+            if(isdigit(c) && tagIndex == 0){
+                continue;
+            }
+            if(tagIndex<lengthOfTag){
+                tag[tagIndex] = c;
+                tagIndex++;
+                if(tagIndex == lengthOfTag){
+                    tag[tagIndex] = '\0';
+                    tagIndex++;
+                    continue;
+                }
+                continue;
+            }
+        }
+        if(tagIndex == lengthOfTag+1 && c !=' ' ){
+             data = &val[i];
+             valExist = 1 ;
+             tagIndex++;
+        }
+        else if(c == '\n'){
+            val[i] = '\0';
+        }
+                                                      
+     }
+     tag[tagIndex] = '\0';
+     bool tagFound = 0;
+     for(int i=0; i<61; i++){
+         if(strcmp(tag,tags[i])==0){
+             tagFound = 1;
+         }
+     }
+ 
+     Field *newField = malloc(sizeof(Field));
+     if(tagFound){
+     ///// make sure everything is valid
+         //printf("%d\n", (int) strlen(data));
+         char * newTag = malloc(sizeof(char)*strlen(tag));
+         if(!valExist){
+             //strcpy(data, " ");
+             data = " ";
+         }
+         char * newValue = malloc(sizeof(char)*strlen(data));
+         strcpy(newValue, data);
+         newField->value = newValue;
+ 
+         strcpy(newTag, tag);
+         newField->tag = newTag;
+     }
+     else{
+         return NULL;
+     }
+     //printf("**%s**\n", newField->tag);
+     return newField;
+ }
+
+
+
+
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
       
 
 

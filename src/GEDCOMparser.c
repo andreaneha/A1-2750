@@ -118,6 +118,32 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                 trExists = 1;
                 g.line = -1;
                 g.type = 0;
+                //*********************************************
+                //LAST MINUTE THINGS
+
+                for(int i = 0; i < eventLen ; i++){
+                    printf("--------------\n");
+                    printEventFields(EventList[i]);
+
+                }
+
+               
+               
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                 return g;
             }
             else{
@@ -178,6 +204,11 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
 
 	                        insertBack(&refList, ref);
                             continue;
+                        }
+                        else if(rt == 3){
+                            //remove this part
+                            continue;
+
                         }
 
                     }
@@ -272,10 +303,55 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
 
                     }
                     else if(currentType ==3){
-                        printf(">>%s:%d\n", line, currentLevel);
                         Field * field;
                         field = createFamilyField(line, currentLevel); 
-                                                                        
+                        if(field != NULL){
+                        //printf("%s\n", field->tag);
+                            if(isEvent(field) || isField){
+                                if(!isField){
+                                    fieldLevel = currentLevel;
+                                    eventLen++;
+                                    List *newList = malloc(sizeof(List));
+                                    *newList = initializeList(printField,
+                                    deleteField, compareFields);
+                                    //indiList[indilen] = malloc(sizeof(List*));
+                                    EventList[eventLen] = newList;
+                                    insertBack(EventList[eventLen], field);
+                                    isField =1;
+                                }
+                                else if(currentLevel == fieldLevel && isField){
+                                    Field * field = malloc(sizeof(field));
+                                    field->tag = malloc(sizeof(char)*6);
+                                    field->value = malloc(sizeof(char)*20);
+                                    strcpy(field->tag, "event");
+                                    char buffer[20];
+                                    sprintf(buffer, "index=%d", eventLen);
+                                    strcpy(field->value, buffer);
+                                    insertBack(familyList[famLen],field);
+                                    isField = 0;
+                                                                                 
+                                }else
+                                {
+                                    insertBack(EventList[eventLen], field);
+                                }
+                            }
+                            if(!isField){
+                                insertBack(familyList[famLen], field);
+                            }
+                        /*Node * node;
+                        node = indiList.head;
+                        Field * newField;
+                        newField = (Field *) node->data;
+                        if(newField->value == NULL){
+                            strcpy(newField->value, " ");
+                        }
+                        //printf("%s:%s\n", newField->tag, newField->value);
+                        List * newList;
+                        */
+                        }
+                        else{
+                            printf("************\n");
+                        }
                     }
 
 
@@ -285,9 +361,11 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
 
     }
 
-    
-    
-    
+
+
+
+
+
 
 
 
@@ -328,7 +406,15 @@ int compareFields(const void* first,const void* second){
     }
 }
 
-char* printField(void* toBePrinted){return NULL;}
+char* printField(void* toBePrinted){
+    Field * field;
+    field = (Field*) toBePrinted;
+    printf("lalala %s=%s\n", field->tag, field->value);
+    
+    
+    
+    
+    }
 
 
 

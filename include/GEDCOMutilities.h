@@ -27,7 +27,7 @@ typedef struct{
 
 
 
-
+void * printEventFields(List * list);
 Field * createFamilyField(char* line, int currentLevel);
 Field* createSubmitterField(char* line, int level);
 
