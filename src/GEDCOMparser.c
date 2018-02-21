@@ -23,6 +23,18 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     List *EventList[200];
     List *familyList[200];
 
+    //----RECORD ENTITIES----
+
+    //Family *family = 
+    
+
+
+
+
+
+
+
+
     //check arguements
     if(fileName == NULL){
         g.type = 1;
@@ -102,7 +114,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
             subExists = 1;// ******* disable when this gets implemented
             if(headerExists && subExists && !trExists){
                 Header* newHeader;
-                newHeader = createHeader(&headerList);
+                newHeader = createHeader(&headerList, &refUsedList);
                 indilen++;
                 eventLen++;
                 indiList[indilen] = NULL;
@@ -120,13 +132,15 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                 g.type = 0;
                 //*********************************************
                 //LAST MINUTE THINGS
+                link(&refList, &refUsedList);
+                /*
 
                 for(int i = 0; i < eventLen ; i++){
                     printf("--------------\n");
                     printEventFields(EventList[i]);
 
                 }
-
+                */
                
                
 
@@ -377,8 +391,13 @@ void deleteField(void* toBeDeleted){
         //do Something
     }
     else{
-        free(field->tag);
-        free(field->value);
+        if(field->tag != NULL){
+            free(field->tag);
+        }
+
+        if(field->value != NULL){
+            free(field->value);
+        }
         free(field);
     }
             
@@ -391,8 +410,26 @@ int compareFields(const void* first,const void* second){
     Field* field2;
     field1 = (Field*)first;
     field2 = (Field*)second;
-    int tagComp = strcmp(field1->tag,field2->tag);
-    int valComp = strcmp(field1->value, field2->value);
+    int tagComp = 0;
+    int valComp = 0;
+    bool nullFound = 0;
+    if(field1->tag == NULL || field2->tag == NULL){
+        if(field1->tag == NULL && field2->tag == NULL){
+            tagComp = 1;
+        }
+        nullFound = 1;
+    }
+    if(field1->value == NULL || field2->value == NULL){
+        if(field1->value == NULL && field2->value == NULL){
+            valComp = 1;
+        }
+        nullFound = 1;
+    }
+
+    if(!nullFound){
+        tagComp = strcmp(field1->tag,field2->tag);
+        valComp = strcmp(field1->value, field2->value);
+    }
     if(!tagComp && !valComp){
         return 0;
     }
@@ -403,13 +440,14 @@ int compareFields(const void* first,const void* second){
 
 char* printField(void* toBePrinted){
     Field * field;
+    char *fieldstr = malloc(sizeof(char) * 160);
     field = (Field*) toBePrinted;
-    printf("lalala %s=%s\n", field->tag, field->value);
+    sprintf(fieldstr, "%s=%s\n", field->tag, field->value);
+    return fieldstr;
     
     
     
-    
-    }
+}
 
 
 

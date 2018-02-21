@@ -1,7 +1,142 @@
+#include <ctype.h>
 #include "GEDCOMutilities.h"
 
+Ref * findRef(List * refList, int refID){
+    Ref * refFound = NULL;
+    ListIterator iter = createIterator(*refList);
+    Ref * ref = (Ref *) nextElement(&iter);
+    while(ref != NULL){
+        if(ref->id = refID){
+            refFound = ref;
+            break;
+        }
+        ref = (Ref*) nextElement(&iter);
 
-void * printEventFields(List * list){
+    }
+
+    return refFound;
+}
+
+//this function returns error = 1 is something goes wrong
+int link(List * objectRef, List * refUsedLocation){
+    int error = 1;
+    
+    ListIterator iter = createIterator(*refUsedLocation);
+    ReferencesUsed * refUsed = (ReferencesUsed *) nextElement(&iter);
+    while(refUsed != NULL){
+        Ref * ref = findRef(objectRef, refUsed->id);
+        if(ref != NULL){
+            *(refUsed ->locationOfRefd) = ref->locationOfRecord;
+            ref->used = 1;
+            refUsed->used = 1;
+
+
+        }else{
+            //ERROR
+        }
+
+
+        refUsed = (ReferencesUsed*)nextElement(&iter);
+    }
+
+    return error;
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+ReferencesUsed * createNewRef(int id, void* locationOfRefd){
+    ReferencesUsed *ru = NULL;
+    if(id != '\0' && locationOfRefd!= NULL){
+        ru = malloc(sizeof(ReferencesUsed));
+        ru-> used = 0;
+        ru->id = id;
+        ru->locationOfRefd = locationOfRefd;
+
+    }
+    return ru;
+}
+
+
+
+void referenceHandle(Field * field, List* refUsedList){
+    int len = strlen(field->value);
+    char * value = field->value;
+    int openIndex = -1;
+    int closeIndex = -1;
+    for(int i = 0; i<len; i++){
+        if(value[i] == '@'){
+            if(openIndex == -1 && closeIndex == -1){
+                openIndex = i;
+            }else if(openIndex != -1 && closeIndex == -1){
+                closeIndex = i;
+            }else if(openIndex != -1 && closeIndex != -1){
+                //something's wrong
+            }
+        }
+    }
+
+    if(openIndex == -1 && closeIndex == -1){
+        //no tags
+    //    printf("%s: no tags\n", value);
+        return;
+    }
+    //this is a tag
+    //-----create new refUsed item
+
+    char valcopy [len];
+    char *refIDstr;
+    int refid;
+    ReferencesUsed* ru;
+
+    strcpy(valcopy, value);
+    refIDstr = &valcopy[openIndex+1];
+    valcopy[closeIndex] = '\0';
+    int index = 0;
+    while(refIDstr[index] != '\0'){
+        if(!isdigit(refIDstr[index])){
+            return;
+        }
+        index++;
+    }
+
+    refid = atoi(refIDstr);
+//    printf(">>%d\n", refid);
+
+	ru = createNewRef(refid, &field->value);
+    Field * test = (Field*)ru->locationOfRefd;
+    free(field->value);
+    field->value = NULL;
+    if(refUsedList != NULL){
+        insertBack(refUsedList, ru);
+    }
+    return;
+ }
+
+void printEventFields(List * list){
     int len = list->length;
     ListIterator iter = createIterator(*list);
     Field * field = (Field*) nextElement(&iter);
@@ -21,7 +156,7 @@ void * printEventFields(List * list){
 
 Field * createFamilyField(char* line, int currentLevel){
     Field * field = NULL;
-    printf("%s :%d\n", line, currentLevel);
+    //printf("%s :%d\n", line, currentLevel);
 
     char * tags []= { 
         "ADDR", "ADR1", "ADR2", "ADR3", "AGE", "AGNC", "ANUL", "CAUS", "CENS", "CHIL",
@@ -131,32 +266,6 @@ Field * createFamilyField(char* line, int currentLevel){
      //printf("**%s**\n", newField->tag);
      return newField;
  }
-
-
-
-
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-      
-
-
-
-
-
-
-
-
-
 
 
 bool isEvent(Field * field){
@@ -288,12 +397,11 @@ Ref *createRed(char * line){
         id = malloc((sizeof(char))*letterCount);
         strcpy(id, at);
         ref = malloc(sizeof(Ref));
-        ref->id = id;
+        ref->id = atoi(id);
     }
 
 
 return ref;
-
 
 }
 
@@ -315,7 +423,7 @@ int findCharSet(char* value){
 return charVal;
 }
 
-Header * createHeader(List* headerFieldList){
+Header * createHeader(List* headerFieldList, List * refUsedList){
 
 	ListIterator iter = createIterator(*headerFieldList);
     Field * field;    
@@ -328,6 +436,7 @@ Header * createHeader(List* headerFieldList){
     bool delField ;
 
     while(field != NULL){
+        referenceHandle(field, refUsedList);
         delField = 0;
         if(strcmp(field->tag, "SOUR")==0){
             strcpy(header->source, field->value);
@@ -343,8 +452,11 @@ Header * createHeader(List* headerFieldList){
             delField = 1;
         }
         else if(strcmp(field->tag, "SUBM")==0){
+            ReferencesUsed * ru;
             //submitter pointer goes here
             header->submitter = NULL;
+	        ru = (ReferencesUsed*) getFromBack(*refUsedList);
+            ru->locationOfRefd = &(header->submitter);
             delField = 1;
         }
 
@@ -482,10 +594,6 @@ Field* createIndiField(char* line, int level){
     }
     return newField;
 }
-
-
-
-
 
 Field* createSubmitterField(char* line, int level){
 
@@ -685,7 +793,14 @@ Field* createHeaderField(char* line, int level){
     Field *newField = malloc(sizeof(Field));
     if(tagFound){
     ///// make sure everything is valid
-    //    printf("%d\n", (int) strlen(data));
+        if((int)strlen(data) == 1 && (strcmp(data, "\n")==0)){
+            char emptydata[] = "<empty>";
+            data = &emptydata;
+        }
+
+
+
+//        printf(">>>%s %d\n", data, (int) strlen(data));
         char * newTag = malloc(sizeof(char)*strlen(tag));
         char * newValue = malloc(sizeof(char)*strlen(data));
         strcpy(newTag, tag);

@@ -9,32 +9,31 @@ typedef enum rType {HEADER,
     } RecordType;
 
 typedef struct{
-    char* id;
+    int id;
     void* locationOfRecord;
     bool used;
 }Ref;
 
 typedef struct{
-    char* id;
-    void * locationOfRefd;
+    int id;
+    void ** locationOfRefd;
+    bool used;
 }ReferencesUsed;
 
             
 
 
 
-
-
-
-
-void * printEventFields(List * list);
+ReferencesUsed * createNewRef(int id, void* locationOfRefd);
+void referenceHandle(Field * field, List* refUsedList);
+void  printEventFields(List * list);
 Field * createFamilyField(char* line, int currentLevel);
 Field* createSubmitterField(char* line, int level);
 
 //verify the header
 Field* createHeaderField(char* line, int level);
 Field* createIndiField(char* line, int level);
-Header * createHeader(List* headerFieldList);    
+Header * createHeader(List* headerFieldList, List * refUsedList);    
 int findCharSet(char* value);
 Ref *createRed(char * line);
 List * createIndiList(List** indiList, List** EventList);
