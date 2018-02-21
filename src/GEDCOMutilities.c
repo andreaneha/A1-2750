@@ -3,10 +3,15 @@
 
 void * printEventFields(List * list){
     int len = list->length;
+    ListIterator iter = createIterator(*list);
+    Field * field = (Field*) nextElement(&iter);
+    while(field!= NULL){
+        printf("tag=%s     value=%s\n", field->tag, field->value);
+        field =(Field*) nextElement(&iter);
+
+    }
+
     printf("%d\n", len);
-
-
-
 }
 
 

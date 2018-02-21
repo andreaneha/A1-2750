@@ -14,8 +14,8 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     List headerList;
     List subList;
     List *indiList[200];
-    List refList;
-    List refUsedList;
+    List refList; //id tags of each record
+    List refUsedList; //where id is used
     int indilen = -1;
     int eventLen= -1;
     int famLen = -1;
@@ -198,19 +198,14 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                             printf("error\n");
                             //*************ERROR!
                         }
-                        else if(rt != 3){//CHANGE THIS TO JUST ELSE
+                        else{//CHANGE THIS TO JUST ELSE
 	                        if(rt == 1){ref->locationOfRecord = &subList;} 
                             else if(rt == 2){ref->locationOfRecord = indiList[indilen];}
+                            else if(rt == 3){ref->locationOfRecord = familyList[famLen];}
 
 	                        insertBack(&refList, ref);
                             continue;
                         }
-                        else if(rt == 3){
-                            //remove this part
-                            continue;
-
-                        }
-
                     }
                     else if(currentLevel == levelCheck){
                     }
