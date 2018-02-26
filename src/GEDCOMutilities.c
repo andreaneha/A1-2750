@@ -2,6 +2,103 @@
 #include "GEDCOMutilities.h"
 
 
+void purge(HeapPointer *hp){
+    if(hp->ref != NULL){
+        clearList(hp->ref);
+        hp->ref = NULL;
+    }
+
+    if(hp->refUsed != NULL){
+        clearList(hp->refUsed);
+        hp->refUsed = NULL;
+    }
+
+    if(hp->headerList != NULL){
+        clearList(hp->headerList);
+        hp->headerList = NULL;
+    }
+    if(hp->subList != NULL){
+        clearList(hp->subList);
+        hp->subList = NULL;
+
+    }
+    if(hp->file != NULL){
+        fclose(hp->file);
+    }
+    if(hp->indiLen >-1){
+        for(int i = 0; i< hp->indiLen; i++){
+            List * currentList = hp->indiList[i];
+            clearList(currentList);
+        }
+    }
+    if(hp->eventLen >-1){
+        for(int i = 0; i< hp->eventLen; i++){
+            List * currentList = hp->eventList[i];
+            clearList(currentList);
+        }
+    }
+    if(hp->familyLen >-1){
+        for(int i = 0; i< hp->familyLen; i++){
+            List * currentList = hp->familyList[i];
+            clearList(currentList);
+        }
+    }
+
+
+    free(hp);
+
+
+}
+
+
+
+
+
+
+void deleteRefList(void* toBeDeleted){
+    Ref * ref = toBeDeleted;
+    if(ref->id != NULL){
+        free(ref->id);
+    }
+    free(ref);
+}
+
+void deleteRefUsedList(void* toBeDeleted){
+    ReferencesUsed *ref = toBeDeleted;
+    if(ref->id != NULL){
+        free(ref->id);
+    }
+    free(ref);
+}
+
+HeapPointer * createHeapPointer(FILE * file){
+    HeapPointer* hp = malloc(sizeof(HeapPointer));
+
+    hp->ref = NULL;
+    hp->refUsed = NULL;
+    hp->headerList= NULL;
+    hp->subList= NULL;;
+    hp->indiList=NULL;
+    hp->indiLen = -1;
+    hp->eventList = NULL;
+    hp->eventLen = -1;
+    hp->familyList = NULL;
+    hp->familyLen = -1;
+    hp->file = NULL;
+    if(file != NULL){
+        hp->file = file;
+    }
+
+return hp;
+
+
+
+}
+
+
+
+
+
 
 List * createEvents(List **eventList, int len, List*refUsedList){
     List * listOfEvents = malloc(sizeof(List));
@@ -281,12 +378,12 @@ Submitter * createSubmitter(List * subList, List * refUsedList){
     return sub;
 }
 
-Ref * findRef(List * refList, int refID){
+Ref * findRef(List * refList, char* refID){
     Ref * refFound = NULL;
     ListIterator iter = createIterator(*refList);
     Ref * ref = (Ref *) nextElement(&iter);
     while(ref != NULL){
-        if(ref->id == refID){
+        if(strcmp(ref->id, refID) == 0){
             refFound = ref;
             break;
         }
@@ -319,12 +416,12 @@ int link(List * objectRef, List * refUsedLocation){
     return error;
 }
 
-ReferencesUsed * createNewRef(int id, void* locationOfRefd){
+ReferencesUsed * createNewRef(char* id, void* locationOfRefd){
     ReferencesUsed *ru = NULL;
     if(id != '\0' && locationOfRefd!= NULL){
         ru = malloc(sizeof(ReferencesUsed));
         ru-> used = 0;
-        ru->id = id;
+        strcpy(ru->id, id);
         ru->locationOfRefd = locationOfRefd;
     }
     return ru;
@@ -357,24 +454,24 @@ void referenceHandle(Field * field, List* refUsedList){
 
     char valcopy [len];
     char *refIDstr;
-    int refid;
+    //int refid;
     ReferencesUsed* ru;
 
     strcpy(valcopy, value);
     refIDstr = &valcopy[openIndex+1];
     valcopy[closeIndex] = '\0';
     int index = 0;
-    while(refIDstr[index] != '\0'){
-        if(!isdigit(refIDstr[index])){
-            return;
-        }
-        index++;
-    }
+    //while(refIDstr[index] != '\0'){
+    //    if(!isdigit(refIDstr[index])){
+    //        return;
+    //    }
+    //    index++;
+    //}
 
-    refid = atoi(refIDstr);
+    //refid = atoi(refIDstr);
 //    printf(">>%d\n", refid);
 
-	ru = createNewRef(refid, &field->value);
+	ru = createNewRef(refIDstr, &field->value);
     free(field->value);
     field->value = NULL;
     if(refUsedList != NULL){
@@ -636,10 +733,17 @@ Ref *createRed(char * line){
     if(open && close){
         char * id;
 //        printf(">>%d\n", letterCount);
-        id = malloc((sizeof(char))*letterCount);
-        strcpy(id, at);
+        id = malloc((sizeof(char))*letterCount+1);
+        if(id == NULL){
+            return ref;
+        }
         ref = malloc(sizeof(Ref));
-        ref->id = atoi(id);
+        if(ref == NULL){
+            free(id);
+            return ref;
+        }
+        strcpy(id, at);
+        ref->id = id;
     }
 
 
@@ -1096,7 +1200,8 @@ RecordType findRecordType(char* line){
     bool tagOpen = 0;
     bool tagClosed = 0;
     bool record = 0;
-    char type [5];
+    char dummy = '\0';
+    char * type = &dummy;
     int typeIndex = 0;
 
     for(int i = 0; i<len;i++){
@@ -1136,11 +1241,19 @@ RecordType findRecordType(char* line){
             }
         }
     }
-
-    if(strcmp(type, "INDI") == 0){return INDIVIDUAL;}
-    else if(strcmp(type, "FAM") == 0){return FAMILY;}
-    else if(strcmp(type, "SUBM") == 0){return SUBMITTER;}
-    else{return INVALID;}
+    if(type == NULL){
+        return INVALID;
+    }
+    else{
+        char types[typeIndex+1];
+	    char * tp = type;
+        tp[typeIndex] = '\0';
+        strcpy(types, tp);
+        if(strcmp(types, "INDI") == 0){return INDIVIDUAL;}
+        else if(strcmp(types, "FAM") == 0){return FAMILY;}
+        else if(strcmp(types, "SUBM") == 0){return SUBMITTER;}
+        else{return INVALID;}
+    }
 }
         
 void printIndividualList(List * indiList){

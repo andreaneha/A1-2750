@@ -22,18 +22,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     int fieldLevel = 0;
     List *EventList[200];
     List *familyList[200];
-
-    //----RECORD ENTITIES----
-
-    //Family *family = 
-    
-
-
-
-
-
-
-
+    HeapPointer *hp;
 
     //check arguements
     if(fileName == NULL){
@@ -83,8 +72,13 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     while(fgets(line,1000,file)!= NULL){
     //    printf("%s\n", linlocationOfRefde);
         // First Parse Header
-        if(!headerExists){
-            line[6] = '\0';
+        
+        int lineLen = strlen(line);
+        for(int i = 0; i<lineLen; i++){
+            char a = line[i];
+            if(a == '\n' || a == '\r'){
+                line[i] = '\0';
+            }
         }
         if(strcmp(line, "0 HEAD") == 0){
             if(!headerExists){
@@ -93,19 +87,29 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                 headerList = initializeList(printField, deleteField, compareFields);
                 subList = initializeList(printField, deleteField, compareFields);
                 //familyList = initializeList(printField, deleteField, compareFields);
-                refList = initializeList(NULL, NULL, NULL);
-                refUsedList = initializeList(NULL, NULL, NULL); 
+                refList = initializeList(NULL, deleteRefList, NULL);
+                refUsedList = initializeList(NULL, deleteRefUsedList, NULL); 
+                hp = createHeapPointer(file);
+                hp->headerList = &headerList;
+                hp->subList = &subList;
+                hp-> ref= &refList;
+                hp-> refUsed= &refUsedList;
+                hp->indiList = indiList;
+                hp->eventList = EventList;
+                hp->familyList = familyList;
+                hp->indiLen = 0;
+                hp->eventLen = 0;
+                hp->familyLen = 0;
+
                 currentType = 0;
                 headerExists = 1;
                 recordNum ++;
                 lineCounter++;
 
                 continue;
-
             }
             else{
-                // there is a preexisting header
-                // make sure to free all memory
+                purge(hp);
                 g.type = 2;
                 g.line = lineCounter;
                 return g;
@@ -113,7 +117,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
 
         }
         
-        if(strcmp(line, "0 TRLR\n") == 0){
+        /*if(strcmp(line, "0 TRLR\n") == 0){
             subExists = 1;// ******* disable when this gets implemented
             if(headerExists && subExists && !trExists){
                 Header* newHeader;
@@ -146,7 +150,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                 trExists = 1;
                 g.line = -1;
                 g.type = 0;
-                //*********************************************
+                // *********************************************
                 //LAST MINUTE THINGS
 
                 updateTag(&refList, &subList, newSubmitter);
@@ -164,14 +168,14 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                 object->individuals = *individualList;
                 object->submitter = newSubmitter;
                 
-                /*
+                
 
-                for(int i = 0; i < eventLen ; i++){
-                    printf("--------------\n");
-                    printEventFields(EventList[i]);
-
-                }
-                */
+                //for(int i = 0; i < eventLen ; i++){
+                //    printf("--------------\n");
+                //    printEventFields(EventList[i]);
+                //
+                //}
+                
                 obj = &object;
                
                
@@ -197,7 +201,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                 g.type = 1;
                 return g;
             }
-        }
+        }*/
 
         if(headerExists){
             int levelCheck;
@@ -215,24 +219,24 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                         RecordType rt = findRecordType(line);
                         //printf(">>%d\n", rt);
                         if(rt == INVALID){
+                            purge(hp);
                             g.type = INV_RECORD;
                             g.line = lineCounter;
                             return g;
                         }
                         else if(rt == 2){
                             indilen++;
-                            List *newList = malloc(sizeof(List));
-                            *newList = initializeList(printField, 
-                                deleteField, compareFields);
-
-	                        //indiList[indilen] = malloc(sizeof(List*));
-                            indiList[indilen] = newList;
+                            List newList;
+                            newList = initializeList(printField, deleteField, compareFields);
+                            indiList[indilen] = &newList;
+                            hp->indiLen = indilen;
                         }
                         else if(rt == 3){
                             //family
                             famLen++;
                             List newList = initializeList(printField, deleteField, compareFields);
 	                        familyList[famLen] = &newList;
+                            hp->familyLen = famLen;
                         //    printf("%s", line);
                             
                         }
@@ -241,8 +245,10 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                         Ref * ref;
                         ref = createRed(line);
                         if (ref == NULL){
-                            printf("error\n");
-                            //*************ERROR!
+                            purge(hp);
+                            g.type = INV_RECORD;
+                            g.line = lineCounter;
+                            return g;
                         }
                         else{//CHANGE THIS TO JUST ELSE
 	                        if(rt == 1){ref->locationOfRecord = &subList;} 
@@ -256,10 +262,12 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                     else if(currentLevel == levelCheck){
                     }
                     else{
+                        purge(hp);
                         g.type = 2;
                         g.line = lineCounter;
                         return g;
                     }
+                    /*
 
                     if(currentType == 0){
                         //this is under the header
@@ -326,16 +334,16 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                             if(!isField){
                                 insertBack(indiList[indilen], field);
                             }
-                            /*Node * node;
-                            node = indiList.head;
-                            Field * newField;
-                            newField = (Field *) node->data;
-                            if(newField->value == NULL){
-                                strcpy(newField->value, " ");
-                            }
-                            //printf("%s:%s\n", newField->tag, newField->value);
-                            List * newList;
-                            */
+                           // Node * node;
+                           // node = indiList.head;
+                           // Field * newField;
+                           // newField = (Field *) node->data;
+                           // if(newField->value == NULL){
+                           //     strcpy(newField->value, " ");
+                           // }
+                           // //printf("%s:%s\n", newField->tag, newField->value);
+                           // //List * newList;
+                            
                         }
                         else{
                             printf("************\n");
@@ -379,37 +387,30 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                             if(!isField){
                                 insertBack(familyList[famLen], field);
                             }
-                        /*Node * node;
-                        node = indiList.head;
-                        Field * newField;
-                        newField = (Field *) node->data;
-                        if(newField->value == NULL){
-                            strcpy(newField->value, " ");
-                        }
-                        //printf("%s:%s\n", newField->tag, newField->value);
-                        List * newList;
-                        */
+                       // Node * node;
+                       // node = indiList.head;
+                       // Field * newField;
+                       // newField = (Field *) node->data;
+                       // if(newField->value == NULL){
+                       //     strcpy(newField->value, " ");
+                       // }
+                       // //printf("%s:%s\n", newField->tag, newField->value);
+                       // List * newList;
+                        
                         }
                         else{
                             printf("************\n");
                         }
                     }
-
+*/
 
                 }
 
         lineCounter++;
 
+
     }
-
-
-
-
-
-
-
-
-
+    purge(hp);
     g.type = 1;
     g.line = 1; 
     return g;
@@ -476,11 +477,7 @@ char* printField(void* toBePrinted){
     field = (Field*) toBePrinted;
     sprintf(fieldstr, "%s=%s\n", field->tag, field->value);
     return fieldstr;
-    
-    
-    
 }
-
 
 
 

@@ -21,3 +21,7 @@ test: src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c
 test2: src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c
 	$(CC) $(CFLAGS) src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c -o bin/testMe
 	./bin/testMe shakespeare.ged
+
+val: src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c
+	$(CC) $(CFLAGS) src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c -o bin/testMe
+	valgrind --leak-check=full --show-leak-kinds=all ./bin/testMe shakespeare.ged 
