@@ -83,7 +83,10 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     while(fgets(line,1000,file)!= NULL){
     //    printf("%s\n", linlocationOfRefde);
         // First Parse Header
-        if(strcmp(line, "0 HEAD\n") == 0){
+        if(!headerExists){
+            line[6] = '\0';
+        }
+        if(strcmp(line, "0 HEAD") == 0){
             if(!headerExists){
                 // there has not been a header in the file yet. 
                 // this is valid
@@ -114,25 +117,53 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
             subExists = 1;// ******* disable when this gets implemented
             if(headerExists && subExists && !trExists){
                 Header* newHeader;
+                Submitter * newSubmitter;
+                //List **individualListp = malloc(sizeof(List));
+                List * individualList;
+                List * allFamilyList;
+                List * allEventList;
                 newHeader = createHeader(&headerList, &refUsedList);
+                newSubmitter = createSubmitter(&subList, &refUsedList);
                 indilen++;
                 eventLen++;
+                famLen++;
                 indiList[indilen] = NULL;
                 EventList[eventLen]=NULL;
+                familyList[famLen] = NULL;
                 GEDCOMobject * object;
                 object = malloc(sizeof(GEDCOMobject));
-                object->header = newHeader;
+                individualList = createIndividuals(indiList, &refUsedList, indilen);
+                allFamilyList = createFamilies(familyList, &refUsedList, famLen);
+                allEventList = createEvents(EventList, eventLen, &refUsedList);
+
                 //printf(">>>>> hello %s\n", object.header);
+                //printIndividualList(individualList);
+                
                 //both header and sub exists
-                List * ind = createIndiList(indiList, EventList);
-                object->individuals = *ind;
+                //List * ind = createIndiList(indiList, EventList);
+                //object->individuals = *ind;
                 obj[recordNum] = object;
                 trExists = 1;
                 g.line = -1;
                 g.type = 0;
                 //*********************************************
                 //LAST MINUTE THINGS
+
+                updateTag(&refList, &subList, newSubmitter);
+                updateListTags(&refList, indiList, indilen, individualList);
+                updateListTags(&refList, familyList, famLen, allFamilyList);
+
+
+                eventHandling(individualList, allEventList);
+
+                
                 link(&refList, &refUsedList);
+
+                object->header = newHeader;
+                object->families = *allFamilyList;
+                object->individuals = *individualList;
+                object->submitter = newSubmitter;
+                
                 /*
 
                 for(int i = 0; i < eventLen ; i++){
@@ -141,6 +172,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
 
                 }
                 */
+                obj = &object;
                
                
 

@@ -12,8 +12,12 @@ endif
 
 debug: src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c
 	$(CC) $(CFLAGS)  src/linkedlist.c src/GEDCOMparser.c src/test.c  src/GEDCOMutilities.c -o bin/testMe -g
-	gdb --args ./bin/testMe testdata.ged core
+	gdb --args ./bin/testMe shakespeare.ged core
 
 test: src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c
 	$(CC) $(CFLAGS) src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c -o bin/testMe
 	./bin/testMe testdata.ged
+
+test2: src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c
+	$(CC) $(CFLAGS) src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c -o bin/testMe
+	./bin/testMe shakespeare.ged

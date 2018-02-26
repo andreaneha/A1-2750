@@ -1,12 +1,292 @@
 #include <ctype.h>
 #include "GEDCOMutilities.h"
 
+
+
+List * createEvents(List **eventList, int len, List*refUsedList){
+    List * listOfEvents = malloc(sizeof(List));
+    *listOfEvents = initializeList(NULL, NULL, NULL);
+    List * currentEvent = NULL;
+    for(int i = 0; i<len; i++){
+        currentEvent = eventList[i];
+    	ListIterator iter = createIterator(*currentEvent);
+        Field * field;
+        Event * event = malloc(sizeof(Event));
+    
+        field = (Field*)nextElement(&iter);
+        strcpy(event->type, field->tag);
+        Field *fieldTemp = field;
+        field = (Field*)nextElement(&iter);
+        deleteDataFromList(currentEvent, fieldTemp);
+        bool delField;
+        while(field != NULL){
+            referenceHandle(field, refUsedList);
+            //nameHandle(),
+            delField = 0;
+            if(strcmp(field->tag, "DATE")==0){
+                char* date = malloc(sizeof(field->value));
+                strcpy(date, field->value);
+                event->date = date;
+                delField = 1;
+
+            }
+            else if(strcmp(field->tag, "PLAC")==0){
+                char* place = malloc(sizeof(field->value));
+                strcpy(place, field->value);
+                event->place = place;
+                delField = 1;
+            }
+
+            if(delField){
+                Field *fieldTemp = field;
+                field = (Field*)nextElement(&iter);
+                deleteDataFromList(currentEvent, fieldTemp);
+                continue;
+            }
+            field = (Field *)nextElement(&iter);
+        }
+        event->otherFields = *currentEvent;
+        insertBack(listOfEvents, event);
+    } 
+    return listOfEvents;
+}
+
+void eventHandling(List * individualList, List * eventList){
+    List  indiEventList;
+    Field * currentField;
+    Node* oldField;
+    int index;
+    //individual iterator
+    ListIterator indIter = createIterator(*individualList);
+    Individual* indi = nextElement(&indIter);
+    while(indi != NULL){
+        indiEventList = (*indi).events;
+        oldField = indiEventList.head;
+        ListIterator iter = createIterator(indiEventList);
+        //currentField = iter.current->data;
+        currentField = nextElement(&iter);
+//        printf("person's name: %s\n", indi->givenName);
+        while(currentField != NULL){
+            char* temp = &(currentField->value)[6];
+            index = atoi(temp);
+//            printf("%d\n", index);
+            Event * eventFound;
+            ListIterator eventIter = createIterator(*eventList);
+            //we found an event and we know it's index
+            for(int i = 0; i <= index; i++){
+                eventFound = nextElement(&eventIter);                
+            }
+            oldField->data = eventFound;
+            free(currentField->tag);
+            free(currentField->value);
+            free(currentField);
+            oldField = oldField->next;
+            currentField = nextElement(&iter);
+        }
+        indi = nextElement(&indIter);
+    }
+}
+
+void updateListTags(List * refList, List ** oldList, int len, List* newList){
+    ListIterator iter = createIterator(*newList);
+    void * currentNewList = nextElement(&iter);
+    for(int i = 0; i<len ; i++){
+        updateTag(refList, oldList[i], currentNewList);
+        currentNewList = nextElement(&iter);
+    }
+}
+
+List * createFamilies(List **famList, List * refUsedList, int famLen){
+    List * listOfFamilies = malloc(sizeof(List));
+    *listOfFamilies = initializeList(NULL, NULL, NULL);
+    List * currentFamily = NULL;
+    for(int i = 0; i<famLen; i++){
+        currentFamily = famList[i];
+        ListIterator iter = createIterator(*currentFamily);
+        Field * field;
+        Family * family = malloc(sizeof(Family));
+        List * children = malloc(sizeof(List));
+        *children = initializeList(NULL,NULL,NULL);
+                                                                
+        field = (Field*)nextElement(&iter);
+                                                                
+        bool delField;
+        while(field != NULL){
+            referenceHandle(field, refUsedList);
+            //nameHandle(),
+            delField = 0;
+            if(strcmp(field->tag, "HUSB")==0){
+                ReferencesUsed * ru = getFromBack(*refUsedList);
+                ru->locationOfRefd = (void*) &family->husband;
+                delField = 1;
+            }
+            else if(strcmp(field->tag, "WIFE")==0){
+                ReferencesUsed * ru = getFromBack(*refUsedList);
+                ru->locationOfRefd = (void*) &family->wife;
+                delField = 1;
+            }
+            else if(strcmp(field->tag, "CHIL")==0){
+                Individual * child = NULL;
+	            insertBack(children, &child);
+                ReferencesUsed * ru = getFromBack(*refUsedList);
+	            ru->locationOfRefd = &children->tail->data;
+                delField = 1;
+            }
+            if(delField){
+                Field *fieldTemp = field;
+                field = (Field*)nextElement(&iter);
+                deleteDataFromList(currentFamily, fieldTemp);
+                continue;
+            }
+            field = (Field *)nextElement(&iter);
+        }
+        family->children = *children;
+        insertBack(listOfFamilies, family);
+    }
+    return listOfFamilies;
+}
+
+
+
+
+
+List * createIndividuals(List **indiList, List * refUsedList, int indilen){
+    List * listOfIndividuals = malloc(sizeof(List));
+    *listOfIndividuals = initializeList(NULL, NULL, NULL);
+    List * currentIndividual = NULL;
+    for(int i = 0; i<indilen; i++){
+        currentIndividual = indiList[i];
+    	ListIterator iter = createIterator(*currentIndividual);
+        Field * field;
+        Individual * indi = malloc(sizeof(Individual));
+        
+        List * listOfEvents = malloc(sizeof(List));
+        
+        *listOfEvents = initializeList(NULL, NULL, NULL);
+
+    
+        field = (Field*)nextElement(&iter);
+
+        bool delField ;
+        char *name = malloc(sizeof(char)*200);
+    
+        while(field != NULL){
+            referenceHandle(field, refUsedList);
+            //nameHandle(),
+            delField = 0;
+            if(strcmp(field->tag, "NAME")==0){
+                strcpy(name, field->value);
+                delField = 1;
+            }else if(strcmp(field->tag, "event")==0){
+                Field * newField = malloc(sizeof(Field));
+                newField->tag = malloc(sizeof(char)*6);
+                newField->value = malloc(sizeof(char)*15);
+                strcpy(newField->tag, field->tag);
+                strcpy(newField->value, field->value);
+                insertBack(listOfEvents, newField);
+                delField = 1;
+            }
+
+
+
+            
+            if(delField){
+                Field *fieldTemp = field;
+                field = (Field*)nextElement(&iter);
+                deleteDataFromList(currentIndividual, fieldTemp);
+                continue;
+    
+            }
+            field = (Field *)nextElement(&iter);
+    
+        }
+        iter.current = currentIndividual->head;
+        field = (Field*)nextElement(&iter);
+    
+        while(field!=NULL){
+            field = (Field*) nextElement(&iter);
+        }
+         
+        indi->givenName = name;
+        indi->otherFields = *currentIndividual;
+        indi->events = *listOfEvents;
+        insertBack(listOfIndividuals, indi);
+
+   } 
+	return listOfIndividuals;
+}
+
+void updateTag(List * refList, void * oldData, void * newData){
+    ListIterator iter = createIterator(*refList);
+    Ref * current = (Ref *) nextElement(&iter);
+    while(current != NULL){
+        if(current->locationOfRecord == oldData){
+            current->locationOfRecord = newData;
+            current = NULL;
+        }
+        else{current = (Ref*) nextElement(&iter);};
+    }
+}
+
+Submitter * createSubmitter(List * subList, List * refUsedList){
+    Submitter * sub = NULL;
+    //printEventFields(subList);
+    if(subList == NULL){
+        return sub;
+    }
+	ListIterator iter = createIterator(*subList);
+    Field * field;    
+
+    field = (Field*)nextElement(&iter);
+    
+
+    bool delField ;
+    char name[61];
+    char address[200];
+    int len;
+
+    while(field != NULL){
+        referenceHandle(field, refUsedList);
+        delField = 0;
+        if(strcmp(field->tag, "NAME")==0){
+            strcpy(name, field->value);
+            delField = 1;
+        }
+        else if(strcmp(field->tag, "ADDR")==0){
+            len = strlen(field->value);
+            strcpy(address, field->value);
+            delField = 1;
+        }
+        if(delField){
+            Field *fieldTemp = field;
+            field = nextElement(&iter);
+            deleteDataFromList(subList, fieldTemp);
+            continue;
+
+        }
+        field = (Field *)nextElement(&iter);
+
+    }
+    iter.current = subList->head;
+    field = (Field*)nextElement(&iter);
+
+    while(field!=NULL){
+        field = (Field*) nextElement(&iter);
+    }
+
+    sub = malloc(sizeof(Submitter) + len*sizeof(char));
+    strcpy(sub->address, address);
+    strcpy(sub->submitterName, name);
+	sub->otherFields = *subList;
+    return sub;
+}
+
 Ref * findRef(List * refList, int refID){
     Ref * refFound = NULL;
     ListIterator iter = createIterator(*refList);
     Ref * ref = (Ref *) nextElement(&iter);
     while(ref != NULL){
-        if(ref->id = refID){
+        if(ref->id == refID){
             refFound = ref;
             break;
         }
@@ -34,39 +314,10 @@ int link(List * objectRef, List * refUsedLocation){
         }else{
             //ERROR
         }
-
-
         refUsed = (ReferencesUsed*)nextElement(&iter);
     }
-
     return error;
-
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ReferencesUsed * createNewRef(int id, void* locationOfRefd){
     ReferencesUsed *ru = NULL;
@@ -75,12 +326,9 @@ ReferencesUsed * createNewRef(int id, void* locationOfRefd){
         ru-> used = 0;
         ru->id = id;
         ru->locationOfRefd = locationOfRefd;
-
     }
     return ru;
 }
-
-
 
 void referenceHandle(Field * field, List* refUsedList){
     int len = strlen(field->value);
@@ -127,7 +375,6 @@ void referenceHandle(Field * field, List* refUsedList){
 //    printf(">>%d\n", refid);
 
 	ru = createNewRef(refid, &field->value);
-    Field * test = (Field*)ru->locationOfRefd;
     free(field->value);
     field->value = NULL;
     if(refUsedList != NULL){
@@ -149,13 +396,8 @@ void printEventFields(List * list){
     printf("%d\n", len);
 }
 
-
-
-
-
-
 Field * createFamilyField(char* line, int currentLevel){
-    Field * field = NULL;
+    //Field * field = NULL;
     //printf("%s :%d\n", line, currentLevel);
 
     char * tags []= { 
@@ -274,7 +516,7 @@ bool isEvent(Field * field){
               "WILL", "GRAD", "RETI","EVEN"}; //51
      
     char *fieldTag = field->tag;
-    char *fieldVal = field->value;
+    //char *fieldVal = field->value;
     bool eventFound = 0;
 
     for(int i; i<23;i++){
@@ -291,7 +533,7 @@ List * createIndiList(List** indiList, List** EventList){
 
     int listLen = 0;
     int listIndex = 0;
-    List * ret = NULL;
+    //List * ret = NULL;
 
     while(indiList[listIndex]!=NULL){
         listLen++;
@@ -456,7 +698,7 @@ Header * createHeader(List* headerFieldList, List * refUsedList){
             //submitter pointer goes here
             header->submitter = NULL;
 	        ru = (ReferencesUsed*) getFromBack(*refUsedList);
-            ru->locationOfRefd = &(header->submitter);
+            ru->locationOfRefd = (void*) &(header->submitter);
             delField = 1;
         }
 
@@ -795,7 +1037,7 @@ Field* createHeaderField(char* line, int level){
     ///// make sure everything is valid
         if((int)strlen(data) == 1 && (strcmp(data, "\n")==0)){
             char emptydata[] = "<empty>";
-            data = &emptydata;
+            data = emptydata;
         }
 
 
@@ -901,3 +1143,19 @@ RecordType findRecordType(char* line){
     else{return INVALID;}
 }
         
+void printIndividualList(List * indiList){
+    ListIterator iter = createIterator(*indiList);
+    Individual* indi;
+    indi = nextElement(&iter);
+    while (indi != NULL){
+        printf("%s\n", indi->givenName);
+        indi = nextElement(&iter);
+    }
+
+}
+
+
+
+
+
+

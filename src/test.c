@@ -19,22 +19,24 @@ int main(int argc, char **argv){
     GEDCOMobject * anObject;
     GEDCOMobject object;
     object.header = NULL;
-    object.families = initializeList(NULL, NULL,NULL);
-    object.individuals = initializeList(NULL, NULL, NULL);
+    //(object.families) = NULL;
+    //(object.individuals) = NULL;
     object.submitter = NULL;
 
     anObject = &object;
     gObjectArray = &anObject;
     int error;
     int desiredTestSuit = 3;
-    Field * field;
-
     if(desiredTestSuit == 3){
         //field = createHeaderField("1 SOUR FTW\n", 1);
         //printf(">>%s:%s\n", field->tag, field->value);
 
        // printf("Check how the parse file function handels things\n");
        gError = createGEDCOM(argv[1], gObjectArray);
+       anObject = *gObjectArray;
+       printf("Done\n");
+
+
 
   /*      printf("\nCheck the createSubmitterField function\n");
         Field * field;
@@ -49,7 +51,7 @@ int main(int argc, char **argv){
 
 
 
-        printf("\nCreate individual field\n");
+        //printf("\nCreate individual field\n");
 
 
         
