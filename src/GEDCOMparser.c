@@ -6,7 +6,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
    // printf(">>>>>>%s\n", fileName);
     GEDCOMerror g;
     FILE* file;
-    char line[200];
+    char rawline[200];
     bool headerExists = 0;
     bool subExists = 0;
     bool trExists=0;
@@ -69,17 +69,21 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     int currentLevel=0;
     int recordNum = -1;
 
-    while(fgets(line,1000,file)!= NULL){
+    while(fgets(rawline,1000,file)!= NULL){
     //    printf("%s\n", linlocationOfRefde);
         // First Parse Header
         
-        int lineLen = strlen(line);
+        int lineLen = strlen(rawline);
         for(int i = 0; i<lineLen; i++){
-            char a = line[i];
+            char a = rawline[i];
             if(a == '\n' || a == '\r'){
-                line[i] = '\0';
+                rawline[i] = '\0';
             }
         }
+        lineLen = strlen(rawline);
+        char line[lineLen+1];
+        strcpy(line,rawline);
+
         if(strcmp(line, "0 HEAD") == 0){
             if(!headerExists){
                 // there has not been a header in the file yet. 
@@ -267,7 +271,6 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                         g.line = lineCounter;
                         return g;
                     }
-                    /*
 
                     if(currentType == 0){
                         //this is under the header
@@ -282,6 +285,8 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                             printf("******\n");
                         }
                     }
+
+                    
                     else if(currentType == 1){
                         //this is part of the submitter
                         subExists = 1;
@@ -308,22 +313,39 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                                     fieldLevel = currentLevel;
                                     eventLen++;
                                     List *newList = malloc(sizeof(List));
+                                    if(newList == NULL){
+                                        free(field);
+                                        purge(hp);
+                                        g.type = INV_RECORD;
+                                        g.line = lineCounter;
+                                        return g;
+
+
+                                    }
                                     *newList = initializeList(printField,
                                         deleteField, compareFields);
                                         //indiList[indilen] = malloc(sizeof(List*));
                                     EventList[eventLen] = newList;
                                     insertBack(EventList[eventLen], field);
+                                    hp->eventLen = eventLen;
                                     isField =1;
                                 }
                                 else if(currentLevel == fieldLevel && isField){
-                                    Field * field = malloc(sizeof(field));
-                                    field->tag = malloc(sizeof(char)*6);
-                                    field->value = malloc(sizeof(char)*6);
-                                    strcpy(field->tag, "event");
+                                    free(field);
+                                    Field * field2 = malloc(sizeof(Field));
+                                    if(field2 == NULL){
+                                        purge(hp);
+                                        g.type = INV_RECORD;
+                                        g.line = lineCounter;
+                                        return g;
+                                    }
+                                    field2->tag = malloc(sizeof(char)*6 + 1);
+                                    field2->value = malloc(sizeof(char)*10 + 1);
+                                    strcpy(field2->tag, "event");
                                     char buffer[20];
                                     sprintf(buffer, "index=%d", eventLen);
                                     strcpy(field->value, buffer);
-                                    insertBack(indiList[indilen],field);
+                                    insertBack(indiList[indilen],field2);
                                     isField = 0;
 
                                 }else
@@ -346,12 +368,20 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                             
                         }
                         else{
-                            printf("************\n");
+                            deleteField(field);
+                            purge(hp);
+                            g.type = INV_RECORD;
+                            g.line = lineCounter;
+                            return g;
+
+                            
+
+//                            printf("1************\n");
                         }
 
 
                     }
-                    else if(currentType ==3){
+                    /*else if(currentType ==3){
                         Field * field;
                         field = createFamilyField(line, currentLevel); 
                         if(field != NULL){
