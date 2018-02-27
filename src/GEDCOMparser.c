@@ -13,15 +13,15 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     bool isField=0;
     List headerList;
     List subList;
-    List *indiList[200];
+    List **indiList = malloc(sizeof(List*)*200);
     List refList; //id tags of each record
     List refUsedList; //where id is used
     int indilen = -1;
     int eventLen= -1;
     int famLen = -1;
     int fieldLevel = 0;
-    List *EventList[200];
-    List *familyList[200];
+    List **EventList = malloc(sizeof(List*)*200);
+    List **familyList = malloc(sizeof(List*)*200);
     HeapPointer *hp;
 
     //check arguements
@@ -72,6 +72,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     while(fgets(rawline,1000,file)!= NULL){
     //    printf("%s\n", linlocationOfRefde);
         // First Parse Header
+        printf("%s", rawline);
         
         int lineLen = strlen(rawline);
         for(int i = 0; i<lineLen; i++){
@@ -101,9 +102,9 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                 hp->indiList = indiList;
                 hp->eventList = EventList;
                 hp->familyList = familyList;
-                hp->indiLen = 0;
-                hp->eventLen = 0;
-                hp->familyLen = 0;
+                hp->indiLen = -1;
+                hp->eventLen = -1;
+                hp->familyLen = -1;
 
                 currentType = 0;
                 headerExists = 1;
@@ -121,7 +122,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
 
         }
         
-        /*if(strcmp(line, "0 TRLR\n") == 0){
+        if(strcmp(line, "0 TRLR") == 0){
             subExists = 1;// ******* disable when this gets implemented
             if(headerExists && subExists && !trExists){
                 Header* newHeader;
@@ -205,7 +206,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                 g.type = 1;
                 return g;
             }
-        }*/
+        }
 
         if(headerExists){
             int levelCheck;
@@ -230,9 +231,9 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                         }
                         else if(rt == 2){
                             indilen++;
-                            List newList;
-                            newList = initializeList(printField, deleteField, compareFields);
-                            indiList[indilen] = &newList;
+                            List *newList = malloc(sizeof(List));
+                            *newList = initializeList(printField, deleteField, compareFields);
+                            indiList[indilen] = newList;
                             hp->indiLen = indilen;
                         }
                         else if(rt == 3){
@@ -310,9 +311,12 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                             //printf("%s\n", field->tag);
                             if(isEvent(field) || isField){
                                 if(!isField){
+                                    deleteField(field);
                                     fieldLevel = currentLevel;
                                     eventLen++;
                                     List *newList = malloc(sizeof(List));
+
+
                                     if(newList == NULL){
                                         free(field);
                                         purge(hp);
@@ -326,12 +330,12 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                                         deleteField, compareFields);
                                         //indiList[indilen] = malloc(sizeof(List*));
                                     EventList[eventLen] = newList;
-                                    insertBack(EventList[eventLen], field);
                                     hp->eventLen = eventLen;
+                                    //insertBack(EventList[eventLen], field);
                                     isField =1;
                                 }
                                 else if(currentLevel == fieldLevel && isField){
-                                    free(field);
+                                    //deleteField(field);
                                     Field * field2 = malloc(sizeof(Field));
                                     if(field2 == NULL){
                                         purge(hp);
@@ -339,23 +343,28 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                                         g.line = lineCounter;
                                         return g;
                                     }
-                                    field2->tag = malloc(sizeof(char)*6 + 1);
-                                    field2->value = malloc(sizeof(char)*10 + 1);
+                                    field2->tag = malloc(sizeof(char)*(6));
                                     strcpy(field2->tag, "event");
-                                    char buffer[20];
+                                    char buffer[11];
                                     sprintf(buffer, "index=%d", eventLen);
-                                    strcpy(field->value, buffer);
+
+                                    field2->value = malloc(sizeof(char)*(strlen(buffer) + 1));
+                                    strcpy(field2->value, buffer);
                                     insertBack(indiList[indilen],field2);
                                     isField = 0;
+                                    //insertBack(indiList[indilen],field);
 
                                 }else
                                 {
                                     insertBack(EventList[eventLen], field);
+
                                 }
                             }
                             if(!isField){
+                                hp->indiLen = indilen;
                                 insertBack(indiList[indilen], field);
-                            }
+                             }
+
                            // Node * node;
                            // node = indiList.head;
                            // Field * newField;
@@ -365,6 +374,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                            // }
                            // //printf("%s:%s\n", newField->tag, newField->value);
                            // //List * newList;
+
                             
                         }
                         else{
@@ -381,7 +391,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
 
 
                     }
-                    /*else if(currentType ==3){
+                    else if(currentType ==3){
                         Field * field;
                         field = createFamilyField(line, currentLevel); 
                         if(field != NULL){
@@ -432,7 +442,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                             printf("************\n");
                         }
                     }
-*/
+
 
                 }
 
@@ -447,18 +457,20 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
 }
 
 void deleteField(void* toBeDeleted){
+    printf("..........\n");
     Field* field;
-    field = (Field *)toBeDeleted;
-    
+    field = (Field *)toBeDeleted; 
     if(field==NULL){
         //do Something
     }
     else{
-        if(field->tag != NULL){
+        if(field->tag != NULL || strcmp(field->tag,"")!=0){
+            printf("%s\n", field->tag);
             free(field->tag);
         }
 
-        if(field->value != NULL){
+        if(field->value != NULL|| strcmp(field->value, "") !=0){
+            printf("%s\n", field->value);
             free(field->value);
         }
         free(field);

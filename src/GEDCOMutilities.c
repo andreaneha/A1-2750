@@ -26,23 +26,38 @@ void purge(HeapPointer *hp){
         fclose(hp->file);
     }
     if(hp->indiLen >-1){
-        for(int i = 0; i< hp->indiLen; i++){
+        for(int i = 0; i<= hp->indiLen; i++){
             List * currentList = hp->indiList[i];
             clearList(currentList);
+            free(currentList);
         }
     }
     if(hp->eventLen >-1){
-        for(int i = 0; i< hp->eventLen; i++){
+        for(int i = 0; i<= hp->eventLen; i++){
             List * currentList = hp->eventList[i];
             clearList(currentList);
+            free(currentList);
         }
     }
     if(hp->familyLen >-1){
-        for(int i = 0; i< hp->familyLen; i++){
+        for(int i = 0; i<= hp->familyLen; i++){
             List * currentList = hp->familyList[i];
             clearList(currentList);
         }
     }
+    if(hp->indiList != NULL){
+        free(hp->indiList);
+        hp->indiList = NULL;
+    }
+    if(hp->eventList != NULL){
+        free(hp->eventList);
+        hp->eventList = NULL;
+    }
+    if(hp->familyList != NULL){
+        free(hp->familyList);
+        hp->familyList = NULL;
+    }
+
 
 
     free(hp);
@@ -268,6 +283,7 @@ List * createIndividuals(List **indiList, List * refUsedList, int indilen){
         char *name = malloc(sizeof(char)*200);
     
         while(field != NULL){
+            printf("%s\n", field->value);
             referenceHandle(field, refUsedList);
             //nameHandle(),
             delField = 0;
@@ -338,20 +354,24 @@ Submitter * createSubmitter(List * subList, List * refUsedList){
     
 
     bool delField ;
+    bool addFound = 0;
+    bool nameFound = 0;
     char name[61];
     char address[200];
-    int len;
+    int len = 0;
 
     while(field != NULL){
         referenceHandle(field, refUsedList);
         delField = 0;
         if(strcmp(field->tag, "NAME")==0){
             strcpy(name, field->value);
+            nameFound = 1;
             delField = 1;
         }
         else if(strcmp(field->tag, "ADDR")==0){
             len = strlen(field->value);
             strcpy(address, field->value);
+            addFound = 1;
             delField = 1;
         }
         if(delField){
@@ -371,9 +391,12 @@ Submitter * createSubmitter(List * subList, List * refUsedList){
         field = (Field*) nextElement(&iter);
     }
 
-    sub = malloc(sizeof(Submitter) + len*sizeof(char));
-    strcpy(sub->address, address);
-    strcpy(sub->submitterName, name);
+    sub = malloc(sizeof(Submitter) + (len+1)*sizeof(char));
+    if(addFound){
+        strcpy(sub->address, address);
+    }if(nameFound){
+        strcpy(sub->submitterName, name);
+    }
 	sub->otherFields = *subList;
     return sub;
 }
@@ -421,6 +444,7 @@ ReferencesUsed * createNewRef(char* id, void* locationOfRefd){
     if(id != '\0' && locationOfRefd!= NULL){
         ru = malloc(sizeof(ReferencesUsed));
         ru-> used = 0;
+        ru->id = malloc(sizeof(char)*(strlen(id)+1));
         strcpy(ru->id, id);
         ru->locationOfRefd = locationOfRefd;
     }
@@ -587,12 +611,12 @@ Field * createFamilyField(char* line, int currentLevel){
      if(tagFound){
      ///// make sure everything is valid
          //printf("%d\n", (int) strlen(data));
-         char * newTag = malloc(sizeof(char)*strlen(tag));
+         char * newTag = malloc(sizeof(char)*(strlen(tag)+1));
          if(!valExist){
              //strcpy(data, " ");
              data = " ";
          }
-         char * newValue = malloc(sizeof(char)*strlen(data));
+         char * newValue = malloc(sizeof(char)*(strlen(data)+1));
          strcpy(newValue, data);
          newField->value = newValue;
  
@@ -612,9 +636,9 @@ bool isEvent(Field * field){
               "BLES", "CHRA", "CONF", "FCOM", "ORDN", "NATU", "EMIG", "IMMI", "CENS", "PROB", 
               "WILL", "GRAD", "RETI","EVEN"}; //51
      
-    char *fieldTag;
+    char fieldTag[5];
     char dummy = '\0';
-    fieldTag = &dummy;
+    //fieldTag = &dummy;
      strcpy(fieldTag, field->tag);
      fieldTag[strlen(field->tag)] = '\0';
     //char *fieldVal = field->value;
@@ -935,8 +959,8 @@ Field* createIndiField(char* line, int level){
     if(tagFound){
     ///// make sure everything is valid
         //printf("%d\n", (int) strlen(data));
-        char * newTag = malloc((sizeof(char)*strlen(tag)) + 1);
-        if(newTag == NULL){
+        newField->tag= malloc((sizeof(char)*(strlen(tag)+1)));
+        if(newField->tag == NULL){
             free(newField);
             return NULL;
         }
@@ -944,22 +968,23 @@ Field* createIndiField(char* line, int level){
             //strcpy(data, " ");
             data = " ";
         }
-        char * newValue = malloc(sizeof(char)*strlen(data)+1);
-        if(newTag == NULL){
+        newField ->value = malloc(sizeof(char)*(1+strlen(data)));
+        if(newField->value == NULL){
             free(newField);
-            free(newTag);
+            free(newField->tag);
             return NULL;
         }
-        strcpy(newValue, data);
-        newField->value = newValue;
+        strcpy(newField->value, data);
+        //newField->value = newValue;
 
-        strcpy(newTag, tag);
-        newField->tag = newTag;
+        strcpy(newField->tag, tag);
+        //newField->tag = newTag;
     }
     else{
         free(newField);
         return NULL;
     }
+    printf("%s, %s\n", newField->tag, newField->value);
     return newField;
 }
 
@@ -1068,14 +1093,24 @@ Field* createSubmitterField(char* line, int level){
     if(tagFound){
     ///// make sure everything is valid
         //printf("%d\n", (int) strlen(data));
-        char * newTag = malloc(sizeof(char)*strlen(tag) + 1);
-        char * newValue = malloc(sizeof(char)*strlen(data) + 1);
+        char * newTag = malloc(sizeof(char)*(strlen(tag)+1));
+        if(newTag == NULL){
+            free(newField);
+            return NULL;
+        }
+        char * newValue = malloc(sizeof(char)*(strlen(data)+1));
+        if(newValue == NULL){
+            free(newField);
+            free(newTag);
+            return NULL;
+        }
         strcpy(newTag, tag);
         strcpy(newValue, data);
         newField->tag = newTag;
         newField->value = newValue;
     }
     else{
+        free(newField);
         return NULL;
     }
     return newField;
@@ -1172,8 +1207,8 @@ Field* createHeaderField(char* line, int level){
 
 
 //        printf(">>>%s %d\n", data, (int) strlen(data));
-        char * newTag = malloc(sizeof(char)*strlen(tag) + 1);
-        char * newValue = malloc(sizeof(char)*strlen(data) + 1);
+        char * newTag = malloc(sizeof(char)*(strlen(tag)+1));
+        char * newValue = malloc(sizeof(char)*(strlen(data)+1));
         strcpy(newTag, tag);
         strcpy(newValue, data);
         newField->tag = newTag;

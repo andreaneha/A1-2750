@@ -12,7 +12,7 @@ endif
 
 debug: src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c
 	$(CC) $(CFLAGS)  src/linkedlist.c src/GEDCOMparser.c src/test.c  src/GEDCOMutilities.c -o bin/testMe -g
-	gdb --args ./bin/testMe shakespeare.ged core
+	gdb --args ./bin/testMe testdata.ged core
 
 test: src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c
 	$(CC) $(CFLAGS) src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c -o bin/testMe
@@ -25,3 +25,7 @@ test2: src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c
 val: src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c
 	$(CC) $(CFLAGS) src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c -o bin/testMe
 	valgrind --leak-check=full --show-leak-kinds=all ./bin/testMe shakespeare.ged 
+
+val2: src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c
+	$(CC) $(CFLAGS) src/linkedlist.c src/GEDCOMparser.c src/test.c src/GEDCOMutilities.c -o bin/testMe
+	valgrind --leak-check=full --show-leak-kinds=all ./bin/testMe testdata.ged 
