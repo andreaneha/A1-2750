@@ -173,7 +173,26 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
                 object->individuals = *individualList;
                 object->submitter = newSubmitter;
                 
-                
+                hp->header = newHeader;
+                hp->allfamilyList = allFamilyList;
+                hp->individualList = individualList;
+                hp->submitter = newSubmitter;
+                hp->alleventList = allEventList;
+                hp->object = object;
+
+                hp->headerList = NULL;
+                hp->subList = NULL;
+                free(hp->indiList);
+                hp->indiList=NULL;
+                free(hp->eventList);
+                hp->eventList = NULL;
+                free(hp->familyList);
+                hp->familyList = NULL;
+                hp->indiLen = -1;
+                hp->familyLen = -1;
+                hp->eventLen = -1;
+
+
 
                 //for(int i = 0; i < eventLen ; i++){
                 //    printf("--------------\n");
@@ -190,7 +209,7 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
 
 
 
-
+                purge(hp);
 
 
 
@@ -455,25 +474,131 @@ GEDCOMerror createGEDCOM(char* fileName, GEDCOMobject** obj){
     g.line = 1; 
     return g;
 }
+//------------------------------------------------------------------------
+//-     HELPER FUNCTIONS       -
+
+
+//Event Helper Functions
+void deleteEvent(void* toBeDeleted){
+    Event * event = (Event*) toBeDeleted;
+    if(event == NULL){
+        return;
+
+    }
+
+    if(event->date != NULL){
+        free(event->date);
+    }
+    if(event->place != NULL){
+        free(event->place);
+    }
+    clearList(&event->otherFields);
+
+}
+int compareEvents(const void* first,const void* second){
+    int ret = 0;
+
+    return ret;
+}
+char* printEvent(void* toBePrinted){
+    char* ret = NULL;
+
+
+    return ret;
+}
+
+//Individual Functions
+void deleteIndividual(void* toBeDeleted){
+    Individual* indi = (Individual*) toBeDeleted;
+    if(indi->givenName != NULL){
+        free(indi->givenName);
+    }
+    if(indi->surname!=NULL){
+        free(indi->surname);
+    }
+    
+   deleteData(&indi->events);
+   
+    //deleteData(->families);
+   clearList(&indi->events);
+   //clearList(&indi->families);
+   clearList(&indi->otherFields);
+
+
+
+}
+int compareIndividuals(const void* first,const void* second){
+    int ret = 0;
+
+    return ret;
+}
+char* printIndividual(void* toBePrinted){
+    char* ret = NULL;
+
+    return ret;
+}
+
+//Family Helper Functions
+void deleteFamily(void* toBeDeleted){
+
+}
+int compareFamilies(const void* first,const void* second){
+    int ret = 0;
+
+    return ret;
+}
+char* printFamily(void* toBePrinted){
+    char * ret = NULL;
+
+    return ret;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 void deleteField(void* toBeDeleted){
-    printf("..........\n");
+
+    printf("..........:\n");
     Field* field;
     field = (Field *)toBeDeleted; 
     if(field==NULL){
         //do Something
     }
     else{
-        if(field->tag != NULL || strcmp(field->tag,"")!=0){
-            printf("%s\n", field->tag);
-            free(field->tag);
+        if(field->tag != NULL){
+            //if(strcmp(field->tag,"")!=0){
+                printf("%s\n", field->tag);
+                free(field->tag);
+                field->tag = NULL;
+            //}
         }
 
-        if(field->value != NULL|| strcmp(field->value, "") !=0){
-            printf("%s\n", field->value);
-            free(field->value);
+        if(field->value != NULL){
+            //if(strcmp(field->value, "") !=0){
+                printf("%s\n", field->value);
+                free(field->value);
+                field->value = NULL;
+            //}
+            //}
         }
-        free(field);
+        //free(field);
+	    //field = NULL;
     }
             
 }
@@ -485,6 +610,16 @@ int compareFields(const void* first,const void* second){
     Field* field2;
     field1 = (Field*)first;
     field2 = (Field*)second;
+    if(field1 == NULL || field2== NULL){        
+        if(field1 == NULL && field2 == NULL){
+            return 1;
+        }
+        else{
+            return 0;
+        }
+    }
+
+
     int tagComp = 0;
     int valComp = 0;
     bool nullFound = 0;

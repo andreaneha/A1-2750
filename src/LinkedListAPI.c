@@ -97,6 +97,9 @@ void clearList(List* list){
     
     while (list->head != NULL){
         list->deleteData(list->head->data);
+        if(list->head->data != NULL){
+            free(list->head->data);
+        }
         tmp = list->head;
         list->head = list->head->next;
         free(tmp);

@@ -1,9 +1,27 @@
 #include <ctype.h>
 #include "GEDCOMutilities.h"
 
+void deleteData(List * list){
+    Node *currentNode = list->head;
+
+
+
+    while(currentNode != NULL){
+        //free(data);
+        currentNode->data = NULL;
+        
+        currentNode = currentNode->next;
+    }
+}
+
+
+
+
+
 
 void purge(HeapPointer *hp){
     if(hp->ref != NULL){
+//        deleteData(hp->ref);
         clearList(hp->ref);
         hp->ref = NULL;
     }
@@ -57,6 +75,31 @@ void purge(HeapPointer *hp){
         free(hp->familyList);
         hp->familyList = NULL;
     }
+    if(hp->header != NULL){
+        clearList(&hp->header->otherFields);
+        free(hp->header);
+        hp->header = NULL;
+    }
+    if(hp->submitter != NULL){
+        clearList(&hp->submitter->otherFields);
+        free(hp->submitter);
+        hp->submitter = NULL;
+    }
+    if(hp->individualList != NULL){
+        //clearList(*hp->individualList->otherFields);
+        clearList(hp->individualList);
+        //clearList(*hp->individualList->families);
+        free(hp->individualList);
+    }
+    if(hp->familyList != NULL){
+        clearList(hp->allfamilyList);
+        //clearList(*hp->familyList->otherfields);
+        free(hp->familyList);
+    }
+    if(hp->eventList != NULL){
+        clearList(hp->alleventList);
+    }
+
 
 
 
@@ -99,10 +142,17 @@ HeapPointer * createHeapPointer(FILE * file){
     hp->eventLen = -1;
     hp->familyList = NULL;
     hp->familyLen = -1;
-    hp->file = NULL;
-    if(file != NULL){
-        hp->file = file;
-    }
+    hp->file = file;
+    //iif(file != NULL){
+    //    hp->file = file;
+    //}
+
+    hp->header = NULL;
+    hp->submitter = NULL;
+    hp->individualList = NULL;
+    hp->allfamilyList = NULL;
+    hp->alleventList = NULL;
+    hp->object = NULL;
 
 return hp;
 
@@ -117,7 +167,7 @@ return hp;
 
 List * createEvents(List **eventList, int len, List*refUsedList){
     List * listOfEvents = malloc(sizeof(List));
-    *listOfEvents = initializeList(NULL, NULL, NULL);
+    *listOfEvents = initializeList(printEvent, deleteEvent, compareEvents);
     List * currentEvent = NULL;
     for(int i = 0; i<len; i++){
         currentEvent = eventList[i];
@@ -143,7 +193,7 @@ List * createEvents(List **eventList, int len, List*refUsedList){
 
             }
             else if(strcmp(field->tag, "PLAC")==0){
-                char* place = malloc(sizeof(field->value));
+                char* place = malloc(sizeof(char)*(strlen(field->value) + 1));
                 strcpy(place, field->value);
                 event->place = place;
                 delField = 1;
@@ -210,7 +260,7 @@ void updateListTags(List * refList, List ** oldList, int len, List* newList){
 
 List * createFamilies(List **famList, List * refUsedList, int famLen){
     List * listOfFamilies = malloc(sizeof(List));
-    *listOfFamilies = initializeList(NULL, NULL, NULL);
+    *listOfFamilies = initializeList(printFamily, deleteFamily, compareFamilies);
     List * currentFamily = NULL;
     for(int i = 0; i<famLen; i++){
         currentFamily = famList[i];
@@ -248,6 +298,7 @@ List * createFamilies(List **famList, List * refUsedList, int famLen){
                 Field *fieldTemp = field;
                 field = (Field*)nextElement(&iter);
                 deleteDataFromList(currentFamily, fieldTemp);
+                deleteField(fieldTemp);
                 continue;
             }
             field = (Field *)nextElement(&iter);
@@ -264,7 +315,7 @@ List * createFamilies(List **famList, List * refUsedList, int famLen){
 
 List * createIndividuals(List **indiList, List * refUsedList, int indilen){
     List * listOfIndividuals = malloc(sizeof(List));
-    *listOfIndividuals = initializeList(NULL, NULL, NULL);
+    *listOfIndividuals = initializeList(printIndividual, deleteIndividual, compareIndividuals);
     List * currentIndividual = NULL;
     for(int i = 0; i<indilen; i++){
         currentIndividual = indiList[i];
@@ -274,7 +325,9 @@ List * createIndividuals(List **indiList, List * refUsedList, int indilen){
         
         List * listOfEvents = malloc(sizeof(List));
         
-        *listOfEvents = initializeList(NULL, NULL, NULL);
+        *listOfEvents = initializeList(printEvent, deleteEvent, compareEvents);
+        List * family = malloc(sizeof(List));
+        *family = initializeList(printFamily, deleteFamily, compareFamilies);
 
     
         field = (Field*)nextElement(&iter);
@@ -283,7 +336,7 @@ List * createIndividuals(List **indiList, List * refUsedList, int indilen){
         char *name = malloc(sizeof(char)*200);
     
         while(field != NULL){
-            printf("%s\n", field->value);
+            //printf("Individual: %s\n", field->value);
             referenceHandle(field, refUsedList);
             //nameHandle(),
             delField = 0;
@@ -299,14 +352,29 @@ List * createIndividuals(List **indiList, List * refUsedList, int indilen){
                 insertBack(listOfEvents, newField);
                 delField = 1;
             }
-
-
-
-            
+            else if(strcmp(field->tag, "FAMS")){
+                Family * fams = NULL;
+	            insertBack(family, &fams);
+                ReferencesUsed * ru = getFromBack(*refUsedList);
+	            ru->locationOfRefd = &family->tail->data;
+                delField = 1;
+            }
+            else if(strcmp(field->tag, "FAMC")){
+              //  printf("htishstihjst\n");
+                Family * fams = NULL;
+                insertBack(family, &fams);
+                ReferencesUsed * ru = getFromBack(*refUsedList);
+                ru->locationOfRefd = &family->tail->data;
+                delField = 1;
+            }
             if(delField){
                 Field *fieldTemp = field;
                 field = (Field*)nextElement(&iter);
+                //free(fieldTemp->tag);
+                //free(fieldTemp->value);
                 deleteDataFromList(currentIndividual, fieldTemp);
+                printf("fwfWEf");
+                deleteField(fieldTemp);
                 continue;
     
             }
@@ -321,6 +389,7 @@ List * createIndividuals(List **indiList, List * refUsedList, int indilen){
         }
          
         indi->givenName = name;
+        indi->surname = NULL;
         indi->otherFields = *currentIndividual;
         indi->events = *listOfEvents;
         insertBack(listOfIndividuals, indi);
@@ -378,6 +447,7 @@ Submitter * createSubmitter(List * subList, List * refUsedList){
             Field *fieldTemp = field;
             field = nextElement(&iter);
             deleteDataFromList(subList, fieldTemp);
+            deleteField(fieldTemp);
             continue;
 
         }
@@ -484,7 +554,6 @@ void referenceHandle(Field * field, List* refUsedList){
     strcpy(valcopy, value);
     refIDstr = &valcopy[openIndex+1];
     valcopy[closeIndex] = '\0';
-    int index = 0;
     //while(refIDstr[index] != '\0'){
     //    if(!isdigit(refIDstr[index])){
     //        return;
@@ -496,7 +565,7 @@ void referenceHandle(Field * field, List* refUsedList){
 //    printf(">>%d\n", refid);
 
 	ru = createNewRef(refIDstr, &field->value);
-    free(field->value);
+    //free(field->value);
     field->value = NULL;
     if(refUsedList != NULL){
         insertBack(refUsedList, ru);
@@ -637,7 +706,6 @@ bool isEvent(Field * field){
               "WILL", "GRAD", "RETI","EVEN"}; //51
      
     char fieldTag[5];
-    char dummy = '\0';
     //fieldTag = &dummy;
      strcpy(fieldTag, field->tag);
      fieldTag[strlen(field->tag)] = '\0';
@@ -667,7 +735,7 @@ List * createIndiList(List** indiList, List** EventList){
 
     //initialize list of individuals
     List * listOfIndividuals=malloc(sizeof(List));
-    *listOfIndividuals = initializeList(NULL, NULL, compareFields);
+    *listOfIndividuals = initializeList(printIndividual, deleteIndividual, compareIndividuals);
 
     for(int i=0; i<listLen; i++){
         List * currentList;
@@ -810,6 +878,8 @@ Header * createHeader(List* headerFieldList, List * refUsedList){
     bool delField ;
 
     while(field != NULL){
+        void * temp;
+        temp = field->value;
         referenceHandle(field, refUsedList);
         delField = 0;
         if(strcmp(field->tag, "SOUR")==0){
@@ -817,8 +887,11 @@ Header * createHeader(List* headerFieldList, List * refUsedList){
             delField = 1;
         }
         else if(strcmp(field->tag, "GEDC")==0){
+            Field *fieldTemp = field;
             field = (Field *)nextElement(&iter);
             header->gedcVersion = atof(field->value);
+            deleteDataFromList(headerFieldList, fieldTemp);
+            deleteField(fieldTemp);
             delField = 1;
         }
         else if(strcmp(field->tag, "CHAR")==0){
@@ -832,12 +905,15 @@ Header * createHeader(List* headerFieldList, List * refUsedList){
 	        ru = (ReferencesUsed*) getFromBack(*refUsedList);
             ru->locationOfRefd = (void*) &(header->submitter);
             delField = 1;
+            free(temp);
+            printf("create Header: %s\n", field->value);
         }
 
         if(delField){
-            Field *fieldTemp = field;
+            Field *fieldTemp  = field;
             field = nextElement(&iter);
-            deleteDataFromList(headerFieldList, fieldTemp);
+            fieldTemp = deleteDataFromList(headerFieldList, fieldTemp);
+            deleteField(fieldTemp);
             continue;
 
         }
@@ -856,7 +932,6 @@ Header * createHeader(List* headerFieldList, List * refUsedList){
 
     return header;
 }
-
 Field* createIndiField(char* line, int level){
     char * tags[] = {"ADDR", "ADOP", "ADR1", "ADR2", "ADR3", "AFN", "AGE", "AGNCY", "ALLA",    
             "ANCI", "ASSO", "BAPL", "BAPM", "BARM", "BASM", "BIRT", "BLES", "BURI",
@@ -984,7 +1059,7 @@ Field* createIndiField(char* line, int level){
         free(newField);
         return NULL;
     }
-    printf("%s, %s\n", newField->tag, newField->value);
+    printf("createindiField = %s, %s\n", newField->tag, newField->value);
     return newField;
 }
 
@@ -1161,7 +1236,8 @@ Field* createHeaderField(char* line, int level){
         }
 
     }
-    bool tagFound = 0;
+
+   bool tagFound = 0;
     if(level == 1){
         for(int i=0; i<12; i++){
             if(strcmp(lv1tags[i],tag)==0){
@@ -1206,7 +1282,7 @@ Field* createHeaderField(char* line, int level){
 
 
 
-//        printf(">>>%s %d\n", data, (int) strlen(data));
+        //printf(">>>%s %d\n", tag, (int) strlen(data));
         char * newTag = malloc(sizeof(char)*(strlen(tag)+1));
         char * newValue = malloc(sizeof(char)*(strlen(data)+1));
         strcpy(newTag, tag);
@@ -1216,6 +1292,7 @@ Field* createHeaderField(char* line, int level){
 
     }
     else{
+        free(newField);
         return NULL;
     }
 
